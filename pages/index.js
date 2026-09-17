@@ -37,6 +37,43 @@ function CheckList({ checks }) {
           <div className="check-text">
             <div className="check-label">{c.label}</div>
             <div className="check-detail">{c.detail}</div>
+            {!c.pass && c.recommendation && (
+              <div className="check-recommendation">💡 추천: {c.recommendation}</div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PrioritySection({ priorityFixes }) {
+  if (!priorityFixes || priorityFixes.length === 0) {
+    return (
+      <div className="section priority-section">
+        <div className="section-header">
+          <h2>🎯 우선 개선 Top 5</h2>
+        </div>
+        <p className="priority-empty">모든 주요 항목이 양호합니다. 특별히 시급한 개선사항이 없어요.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="section priority-section">
+      <div className="section-header">
+        <h2>🎯 우선 개선 Top 5</h2>
+      </div>
+      <p className="priority-subtitle">전체 점검 항목 중 중요도가 높으면서 아직 안 되어 있는 항목이에요. 이것부터 고치시는 걸 추천드려요.</p>
+      {priorityFixes.map((c, idx) => (
+        <div className="priority-item" key={c.id}>
+          <div className="priority-rank">{idx + 1}</div>
+          <div className="check-text">
+            <div className="check-label">
+              <span className="priority-category">[{c.category}]</span> {c.label}
+            </div>
+            <div className="check-detail">{c.detail}</div>
+            {c.recommendation && <div className="check-recommendation">💡 추천: {c.recommendation}</div>}
           </div>
         </div>
       ))}
@@ -124,6 +161,8 @@ export default function Home() {
             <MiniScore score={result.categories.searchFriendliness.score} label="검색엔진 친화도" />
             <MiniScore score={result.categories.speedOptimization.score} label="속도 최적화" />
           </div>
+
+          <PrioritySection priorityFixes={result.priorityFixes} />
 
           <Section
             title="1. 콘텐츠 SEO"
