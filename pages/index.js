@@ -1,29 +1,55 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
-function scoreColor(score) {
-  if (score >= 80) return { bg: "#dcfce7", fg: "#16a34a" };
-  if (score >= 50) return { bg: "#fef9c3", fg: "#ca8a04" };
-  return { bg: "#fee2e2", fg: "#dc2626" };
+const STATUS = {
+  good: "#0ca30c",
+  warning: "#fab219",
+  critical: "#d03b3b",
+};
+
+const CATEGORY_META = {
+  contentSeo: { label: "콘텐츠 SEO", max: 50 },
+  technicalSeo: { label: "테크니컬 SEO", max: 20 },
+  searchFriendliness: { label: "검색엔진 친화도", max: 20 },
+  speedOptimization: { label: "속도 최적화", max: 10 },
+};
+
+function statusOf(score) {
+  if (score >= 80) return "good";
+  if (score >= 50) return "warning";
+  return "critical";
 }
 
-function ScoreCircle({ score, label }) {
-  const c = scoreColor(score);
-  return (
-    <div className="score-circle" style={{ background: c.bg, color: c.fg }}>
-      <div className="num">{score}</div>
-      <div className="label">{label}</div>
-    </div>
-  );
+function pillStyle(score) {
+  const s = statusOf(score);
+  if (s === "good") return { background: "#e7f7e7", color: STATUS.good };
+  if (s === "warning") return { background: "#fef3dd", color: "#b9790a" };
+  return { background: "#fbe9e8", color: STATUS.critical };
 }
 
-function MiniScore({ score, label }) {
-  const c = scoreColor(score);
+function gradeInfo(score) {
+  if (score >= 90) return { label: "매우 우수", ...pillStyle(score) };
+  if (score >= 70) return { label: "양호", ...pillStyle(score) };
+  if (score >= 50) return { label: "보통", ...pillStyle(score) };
+  return { label: "개선 필요", ...pillStyle(score) };
+}
+
+function CategoryMeter({ label, score, max }) {
+  const points = Math.round((score / 100) * max);
+  const fillColor = STATUS[statusOf(score)];
   return (
-    <div className="mini-score">
-      <div className="mini-num" style={{ color: c.fg }}>
-        {score}점
+    <div className="meter-row">
+      <div className="meter-labels">
+        <span className="name">{label}</span>
+        <span className="value">
+          {points}/{max}점
+        </span>
       </div>
-      <div className="mini-label">{label}</div>
+      <div className="meter-track">
+        <div
+          className="meter-fill"
+          style={{ width: `${score}%`, background: fillColor }}
+        />
+      </div>
     </div>
   );
 }
@@ -49,47 +75,45 @@ function CheckList({ checks }) {
 }
 
 function PrioritySection({ priorityFixes }) {
-  if (!priorityFixes || priorityFixes.length === 0) {
-    return (
-      <div className="section priority-section">
-        <div className="section-header">
-          <h2>🎯 우선 개선 Top 5</h2>
-        </div>
-        <p className="priority-empty">모든 주요 항목이 양호합니다. 특별히 시급한 개선사항이 없어요.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="section priority-section">
-      <div className="section-header">
-        <h2>🎯 우선 개선 Top 5</h2>
-      </div>
-      <p className="priority-subtitle">전체 점검 항목 중 중요도가 높으면서 아직 안 되어 있는 항목이에요. 이것부터 고치시는 걸 추천드려요.</p>
-      {priorityFixes.map((c, idx) => (
-        <div className="priority-item" key={c.id}>
-          <div className="priority-rank">{idx + 1}</div>
-          <div className="check-text">
-            <div className="check-label">
-              <span className="priority-category">[{c.category}]</span> {c.label}
+    <div className="card priority-card">
+      <div className="priority-title">🎯 우선 개선 Top 5</div>
+      {(!priorityFixes || priorityFixes.length === 0) ? (
+        <p className="priority-empty">모든 주요 항목이 양호합니다. 특별히 시급한 개선사항이 없어요.</p>
+      ) : (
+        <>
+          <p className="priority-subtitle">
+            전체 점검 항목 중 중요도가 높으면서 아직 안 되어 있는 항목이에요. 이것부터 고치시는 걸 추천드려요.
+          </p>
+          {priorityFixes.map((c, idx) => (
+            <div className="priority-item" key={c.id}>
+              <div className="priority-rank">{idx + 1}</div>
+              <div className="check-text">
+                <div className="check-label">
+                  <span className="priority-category">[{c.category}]</span> {c.label}
+                </div>
+                <div className="check-detail">{c.detail}</div>
+                {c.recommendation && (
+                  <div className="check-recommendation">💡 추천: {c.recommendation}</div>
+                )}
+              </div>
             </div>
-            <div className="check-detail">{c.detail}</div>
-            {c.recommendation && <div className="check-recommendation">💡 추천: {c.recommendation}</div>}
-          </div>
-        </div>
-      ))}
+          ))}
+        </>
+      )}
     </div>
   );
 }
 
-function Section({ title, score, checks }) {
-  const c = scoreColor(score);
+function CategorySection({ title, score, max, checks }) {
+  const pill = pillStyle(score);
+  const points = Math.round((score / 100) * max);
   return (
-    <div className="section">
-      <div className="section-header">
+    <div className="card category-card">
+      <div className="card-header">
         <h2>{title}</h2>
-        <span className="section-score" style={{ background: c.bg, color: c.fg }}>
-          {score}점
+        <span className="score-pill" style={{ background: pill.background, color: pill.color }}>
+          {points}/{max}점
         </span>
       </div>
       <CheckList checks={checks} />
@@ -102,6 +126,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const inputRef = useRef(null);
 
   async function handleAnalyze(e) {
     e.preventDefault();
@@ -128,6 +153,14 @@ export default function Home() {
     }
   }
 
+  function handleReset() {
+    setResult(null);
+    setError("");
+    setUrl("");
+    if (inputRef.current) inputRef.current.focus();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
     <div className="container">
       <div className="header">
@@ -137,6 +170,7 @@ export default function Home() {
 
       <form className="search-box" onSubmit={handleAnalyze}>
         <input
+          ref={inputRef}
           type="text"
           placeholder="예: example.com 또는 https://example.com"
           value={url}
@@ -146,55 +180,93 @@ export default function Home() {
           {loading ? "분석 중..." : "분석하기"}
         </button>
       </form>
+      <p className="search-hint">http:// 또는 https:// 없이 입력해도 자동으로 인식돼요.</p>
 
       {error && <div className="error-box">{error}</div>}
 
       {result && (
-        <>
-          <div className="summary-card">
-            <ScoreCircle score={result.overallScore} label="종합 SEO 점수" />
-            <div className="summary-url">{result.finalUrl}</div>
+        <div className="results-grid">
+          <div className="sidebar">
+            <div className="card score-card">
+              <p className="score-eyebrow">SEO 종합 점수</p>
+              <div className="score-hero">{result.overallScore}</div>
+              <span
+                className="grade-badge"
+                style={{
+                  background: gradeInfo(result.overallScore).background,
+                  color: gradeInfo(result.overallScore).color,
+                }}
+              >
+                {gradeInfo(result.overallScore).label}
+              </span>
+              <div className="score-url">{result.finalUrl}</div>
+              <button className="reset-btn" onClick={handleReset} type="button">
+                새로 분석하기
+              </button>
+            </div>
+
+            <div className="card meter-card">
+              <p className="meter-title">카테고리별 점수</p>
+              {Object.entries(CATEGORY_META).map(([key, meta]) => (
+                <CategoryMeter
+                  key={key}
+                  label={meta.label}
+                  score={result.categories[key].score}
+                  max={meta.max}
+                />
+              ))}
+            </div>
           </div>
 
-          <div className="category-grid">
-            <MiniScore score={result.categories.contentSeo.score} label="콘텐츠 SEO" />
-            <MiniScore score={result.categories.technicalSeo.score} label="테크니컬 SEO" />
-            <MiniScore score={result.categories.searchFriendliness.score} label="검색엔진 친화도" />
-            <MiniScore score={result.categories.speedOptimization.score} label="속도 최적화" />
+          <div className="main-col">
+            <PrioritySection priorityFixes={result.priorityFixes} />
+
+            <CategorySection
+              title="1. 콘텐츠 SEO"
+              score={result.categories.contentSeo.score}
+              max={CATEGORY_META.contentSeo.max}
+              checks={result.categories.contentSeo.checks}
+            />
+            <CategorySection
+              title="2. 테크니컬 SEO"
+              score={result.categories.technicalSeo.score}
+              max={CATEGORY_META.technicalSeo.max}
+              checks={result.categories.technicalSeo.checks}
+            />
+            <CategorySection
+              title="3. 검색엔진 친화도"
+              score={result.categories.searchFriendliness.score}
+              max={CATEGORY_META.searchFriendliness.max}
+              checks={result.categories.searchFriendliness.checks}
+            />
+            <CategorySection
+              title="4. 속도 최적화"
+              score={result.categories.speedOptimization.score}
+              max={CATEGORY_META.speedOptimization.max}
+              checks={result.categories.speedOptimization.checks}
+            />
+
+            <div className="card category-card">
+              <div className="card-header">
+                <h2>보안 권장사항</h2>
+                <span
+                  className="score-pill"
+                  style={{
+                    background: pillStyle(result.security.score).background,
+                    color: pillStyle(result.security.score).color,
+                  }}
+                >
+                  {result.security.score}점
+                </span>
+              </div>
+              <CheckList checks={result.security.checks} />
+            </div>
+
+            <div className="footer-note">
+              분석 시각: {new Date(result.fetchedAt).toLocaleString("ko-KR")}
+            </div>
           </div>
-
-          <PrioritySection priorityFixes={result.priorityFixes} />
-
-          <Section
-            title="1. 콘텐츠 SEO"
-            score={result.categories.contentSeo.score}
-            checks={result.categories.contentSeo.checks}
-          />
-          <Section
-            title="2. 테크니컬 SEO"
-            score={result.categories.technicalSeo.score}
-            checks={result.categories.technicalSeo.checks}
-          />
-          <Section
-            title="3. 검색엔진 친화도"
-            score={result.categories.searchFriendliness.score}
-            checks={result.categories.searchFriendliness.checks}
-          />
-          <Section
-            title="4. 속도 최적화"
-            score={result.categories.speedOptimization.score}
-            checks={result.categories.speedOptimization.checks}
-          />
-          <Section
-            title="보안 권장사항"
-            score={result.security.score}
-            checks={result.security.checks}
-          />
-
-          <div className="footer-note">
-            분석 시각: {new Date(result.fetchedAt).toLocaleString("ko-KR")}
-          </div>
-        </>
+        </div>
       )}
     </div>
   );
