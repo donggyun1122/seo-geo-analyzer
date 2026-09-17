@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const STATUS = {
   good: "#0ca30c",
@@ -165,6 +165,174 @@ function CategorySection({ title, score, max, checks }) {
   );
 }
 
+const BRAND_SOURCE_META = {
+  blog: { label: "블로그", color: "#0071e3" },
+  news: { label: "뉴스", color: "#5e5ce6" },
+  cafearticle: { label: "카페", color: "#8e8e93" },
+};
+
+function formatCount(n) {
+  if (typeof n !== "number") return "0";
+  return n.toLocaleString("ko-KR");
+}
+
+function BrandTrendChart({ trend }) {
+  const maxVal = Math.max(1, ...trend.map((d) => Math.max(d.blog, d.news)));
+  return (
+    <div className="brand-trend">
+      <div className="brand-trend-legend">
+        <span className="brand-legend-item">
+          <span className="brand-legend-dot" style={{ background: BRAND_SOURCE_META.blog.color }} />
+          블로그
+        </span>
+        <span className="brand-legend-item">
+          <span className="brand-legend-dot" style={{ background: BRAND_SOURCE_META.news.color }} />
+          뉴스
+        </span>
+      </div>
+      <div className="brand-trend-chart">
+        {trend.map((d) => (
+          <div className="brand-trend-col" key={d.key}>
+            <div className="brand-trend-bars">
+              <div
+                className="brand-trend-bar"
+                style={{
+                  height: `${Math.max(d.blog > 0 ? 4 : 0, (d.blog / maxVal) * 100)}px`,
+                  background: BRAND_SOURCE_META.blog.color,
+                }}
+                title={`블로그 ${d.blog}건`}
+              />
+              <div
+                className="brand-trend-bar"
+                style={{
+                  height: `${Math.max(d.news > 0 ? 4 : 0, (d.news / maxVal) * 100)}px`,
+                  background: BRAND_SOURCE_META.news.color,
+                }}
+                title={`뉴스 ${d.news}건`}
+              />
+            </div>
+            <div className="brand-trend-daylabel">{d.label}</div>
+          </div>
+        ))}
+      </div>
+      <p className="brand-trend-note">최근 14일 · 블로그/뉴스만 표시돼요 (카페글 검색 API는 발행일 정보를 제공하지 않아요).</p>
+    </div>
+  );
+}
+
+function BrandItemList({ items }) {
+  if (!items || items.length === 0) {
+    return <p className="brand-empty">최근 게시물을 찾지 못했어요.</p>;
+  }
+  return (
+    <div>
+      {items.map((it, idx) => (
+        <div className="brand-item" key={`${it.link}-${idx}`}>
+          <a className="brand-item-title" href={it.link} target="_blank" rel="noopener noreferrer">
+            {it.title}
+          </a>
+          {it.dateLabel && <div className="brand-item-date">{it.dateLabel}</div>}
+          {it.description && <div className="brand-item-desc">{it.description}</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BrandSourceCard({ sourceKey, source }) {
+  const meta = BRAND_SOURCE_META[sourceKey];
+  return (
+    <div className="card brand-source-card">
+      <div className="card-header">
+        <h2>{meta.label}</h2>
+        <span className="score-pill" style={{ background: "#f0f7ff", color: meta.color }}>
+          약 {formatCount(source.total)}건
+        </span>
+      </div>
+      {source.hasDates ? (
+        <p className="brand-source-sub">최근 7일 {source.count7d}건 · 최근 30일 {source.count30d}건 (표시 중인 {source.fetchedCount}건 기준)</p>
+      ) : (
+        <p className="brand-source-sub">발행일 정보가 제공되지 않아 최근 {source.fetchedCount}건만 표시돼요.</p>
+      )}
+      <BrandItemList items={source.items} />
+    </div>
+  );
+}
+
+// 점수 섹션 하단 2단 레이아웃의 우측 카드 — 키워드 수정 + 요약 수치
+function BrandSummaryCard({ keyword, onKeywordChange, onSubmit, loading, error, result }) {
+  return (
+    <div className="card brand-summary-compact">
+      <div className="priority-title">📌 발행 분석 요약</div>
+      <form className="brand-keyword-form" onSubmit={onSubmit}>
+        <input
+          type="text"
+          value={keyword}
+          onChange={(e) => onKeywordChange(e.target.value)}
+          placeholder="브랜드 키워드"
+        />
+        <button type="submit" disabled={loading || !keyword.trim()}>
+          {loading ? "분석 중..." : "재분석"}
+        </button>
+      </form>
+      <p className="brand-keyword-hint">사이트에서 자동으로 추정한 키워드예요. 다르면 수정 후 재분석해보세요.</p>
+
+      {error && <p className="brand-summary-error">{error}</p>}
+
+      {!error && !result && loading && <p className="brand-empty">네이버에서 관련 콘텐츠를 찾는 중이에요...</p>}
+      {!error && !result && !loading && <p className="brand-empty">키워드를 확인하고 분석해보세요.</p>}
+
+      {result && (
+        <>
+          <p className="brand-summary-total">
+            <span className="brand-summary-total-num">약 {formatCount(result.totalMentions)}건</span>
+            <span className="brand-summary-total-label">전체 추정 발행량</span>
+          </p>
+          <div className="brand-summary-rows">
+            {["blog", "news", "cafearticle"].map((key) => {
+              const s = result.sources[key];
+              const meta = BRAND_SOURCE_META[key];
+              return (
+                <div className="brand-summary-row" key={key}>
+                  <span className="brand-summary-row-label">
+                    <span className="brand-legend-dot" style={{ background: meta.color }} />
+                    {meta.label}
+                  </span>
+                  <span className="brand-summary-row-value">
+                    약 {formatCount(s.total)}건{s.hasDates ? ` · 최근 7일 ${s.count7d}건` : ""}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <a className="brand-summary-link" href="#brand-detail">
+            아래에서 게시물 목록 보기 ↓
+          </a>
+        </>
+      )}
+    </div>
+  );
+}
+
+// 페이지 하단 — 브랜드 콘텐츠 발행 현황 상세(추이 그래프 + 소스별 목록)
+function BrandDetailSection({ keyword, result }) {
+  return (
+    <div id="brand-detail">
+      <div className="header brand-detail-header">
+        <h2>브랜드 콘텐츠 발행 현황 — &ldquo;{keyword}&rdquo;</h2>
+        <p>네이버 블로그·뉴스·카페 검색 기준이에요.</p>
+      </div>
+      <div className="card brand-trend-card">
+        <BrandTrendChart trend={result.trend} />
+      </div>
+      <BrandSourceCard sourceKey="blog" source={result.sources.blog} />
+      <BrandSourceCard sourceKey="news" source={result.sources.news} />
+      <BrandSourceCard sourceKey="cafearticle" source={result.sources.cafearticle} />
+      <div className="footer-note">분석 시각: {new Date(result.fetchedAt).toLocaleString("ko-KR")}</div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -172,12 +340,20 @@ export default function Home() {
   const [result, setResult] = useState(null);
   const inputRef = useRef(null);
 
+  const [brandKeyword, setBrandKeyword] = useState("");
+  const [brandLoading, setBrandLoading] = useState(false);
+  const [brandError, setBrandError] = useState("");
+  const [brandResult, setBrandResult] = useState(null);
+
   async function handleAnalyze(e) {
     e.preventDefault();
     if (!url.trim()) return;
     setLoading(true);
     setError("");
     setResult(null);
+    setBrandKeyword("");
+    setBrandResult(null);
+    setBrandError("");
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -197,10 +373,52 @@ export default function Home() {
     }
   }
 
+  async function runBrandAnalyze(rawKeyword) {
+    const kw = (rawKeyword || "").trim();
+    if (!kw) return;
+    setBrandLoading(true);
+    setBrandError("");
+    setBrandResult(null);
+    try {
+      const res = await fetch("/api/brand-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keyword: kw }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setBrandError(data.error || "분석에 실패했습니다.");
+      } else {
+        setBrandResult(data);
+      }
+    } catch (err) {
+      setBrandError("분석 요청 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setBrandLoading(false);
+    }
+  }
+
+  function handleBrandSubmit(e) {
+    e.preventDefault();
+    runBrandAnalyze(brandKeyword);
+  }
+
+  // SEO 분석이 끝나면, 사이트에서 추정한 브랜드 키워드로 발행 현황도 자동 분석합니다.
+  useEffect(() => {
+    if (result && result.suggestedBrandKeyword) {
+      setBrandKeyword(result.suggestedBrandKeyword);
+      runBrandAnalyze(result.suggestedBrandKeyword);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
+
   function handleReset() {
     setResult(null);
     setError("");
     setUrl("");
+    setBrandKeyword("");
+    setBrandResult(null);
+    setBrandError("");
     if (inputRef.current) inputRef.current.focus();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -253,7 +471,17 @@ export default function Home() {
             </button>
           </div>
 
-          <PrioritySection priorityFixes={result.priorityFixes} />
+          <div className="split-row">
+            <PrioritySection priorityFixes={result.priorityFixes} />
+            <BrandSummaryCard
+              keyword={brandKeyword}
+              onKeywordChange={setBrandKeyword}
+              onSubmit={handleBrandSubmit}
+              loading={brandLoading}
+              error={brandError}
+              result={brandResult}
+            />
+          </div>
 
           <CategorySection
             title="1. 콘텐츠 SEO"
@@ -299,6 +527,13 @@ export default function Home() {
           <div className="footer-note">
             분석 시각: {new Date(result.fetchedAt).toLocaleString("ko-KR")}
           </div>
+
+          {brandResult && (
+            <>
+              <div className="section-divider" />
+              <BrandDetailSection keyword={brandResult.keyword} result={brandResult} />
+            </>
+          )}
         </div>
       )}
     </div>
