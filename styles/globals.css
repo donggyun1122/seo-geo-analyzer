@@ -222,6 +222,20 @@ body {
   line-height: 1.4;
 }
 
+.check-code {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  background: #1e1e2e;
+  color: #a6e3a1;
+  border-radius: 6px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
 .priority-section {
   border: 1px solid #bfdbfe;
   background: #eff6ff;

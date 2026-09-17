@@ -40,6 +40,7 @@ function CheckList({ checks }) {
             {!c.pass && c.recommendation && (
               <div className="check-recommendation">💡 추천: {c.recommendation}</div>
             )}
+            {!c.pass && c.evidence && <pre className="check-code">{c.evidence}</pre>}
           </div>
         </div>
       ))}
