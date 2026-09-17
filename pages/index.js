@@ -13,6 +13,7 @@ const CATEGORY_META = {
   speedOptimization: { label: "속도 최적화", max: 10 },
 };
 
+// 카테고리별 소점수(0~100)에 쓰는 상태 색상 기준 (기존 그대로 유지)
 function statusOf(score) {
   if (score >= 80) return "good";
   if (score >= 50) return "warning";
@@ -26,11 +27,49 @@ function pillStyle(score) {
   return { background: "#fbe9e8", color: STATUS.critical };
 }
 
-function gradeInfo(score) {
-  if (score >= 90) return { label: "매우 우수", ...pillStyle(score) };
-  if (score >= 70) return { label: "양호", ...pillStyle(score) };
-  if (score >= 50) return { label: "보통", ...pillStyle(score) };
-  return { label: "개선 필요", ...pillStyle(score) };
+// 종합 점수 등급 (90~100 최우수 / 70~89 우수 / 50~69 보완 필요 / 0~49 위험)
+function overallGrade(score) {
+  if (score >= 90) return { label: "최우수", color: STATUS.good };
+  if (score >= 70) return { label: "우수", color: STATUS.good };
+  if (score >= 50) return { label: "보완 필요", color: STATUS.warning };
+  return { label: "위험", color: STATUS.critical };
+}
+
+function ScoreRing({ score, size = 168, stroke = 14 }) {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progress = Math.max(0, Math.min(100, score)) / 100;
+  const dashOffset = circumference * (1 - progress);
+  const grade = overallGrade(score);
+
+  return (
+    <div className="score-ring-block">
+      <div className="score-ring-wrap" style={{ width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#3a3a3c" strokeWidth={stroke} />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={grade.color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={dashOffset}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        </svg>
+        <div className="score-ring-center">
+          <div className="score-ring-num">{score}</div>
+          <div className="score-ring-max">/ 100</div>
+        </div>
+      </div>
+      <span className="grade-badge-ring" style={{ borderColor: grade.color, color: grade.color }}>
+        {grade.label}
+      </span>
+    </div>
+  );
 }
 
 function CategoryMeter({ label, score, max }) {
@@ -45,10 +84,7 @@ function CategoryMeter({ label, score, max }) {
         </span>
       </div>
       <div className="meter-track">
-        <div
-          className="meter-fill"
-          style={{ width: `${score}%`, background: fillColor }}
-        />
+        <div className="meter-fill" style={{ width: `${score}%`, background: fillColor }} />
       </div>
     </div>
   );
@@ -185,27 +221,11 @@ export default function Home() {
       {error && <div className="error-box">{error}</div>}
 
       {result && (
-        <div className="results-grid">
-          <div className="sidebar">
-            <div className="card score-card">
-              <p className="score-eyebrow">SEO 종합 점수</p>
-              <div className="score-hero">{result.overallScore}</div>
-              <span
-                className="grade-badge"
-                style={{
-                  background: gradeInfo(result.overallScore).background,
-                  color: gradeInfo(result.overallScore).color,
-                }}
-              >
-                {gradeInfo(result.overallScore).label}
-              </span>
-              <div className="score-url">{result.finalUrl}</div>
-              <button className="reset-btn" onClick={handleReset} type="button">
-                새로 분석하기
-              </button>
-            </div>
-
-            <div className="card meter-card">
+        <div className="content-col">
+          <div className="hero-card">
+            <ScoreRing score={result.overallScore} />
+            <div className="hero-divider" />
+            <div className="meter-card-inline">
               <p className="meter-title">카테고리별 점수</p>
               {Object.entries(CATEGORY_META).map(([key, meta]) => (
                 <CategoryMeter
@@ -218,53 +238,58 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="main-col">
-            <PrioritySection priorityFixes={result.priorityFixes} />
+          <div className="hero-footer">
+            <span className="score-url">{result.finalUrl}</span>
+            <button className="reset-link-btn" onClick={handleReset} type="button">
+              새로 분석하기 ↻
+            </button>
+          </div>
 
-            <CategorySection
-              title="1. 콘텐츠 SEO"
-              score={result.categories.contentSeo.score}
-              max={CATEGORY_META.contentSeo.max}
-              checks={result.categories.contentSeo.checks}
-            />
-            <CategorySection
-              title="2. 테크니컬 SEO"
-              score={result.categories.technicalSeo.score}
-              max={CATEGORY_META.technicalSeo.max}
-              checks={result.categories.technicalSeo.checks}
-            />
-            <CategorySection
-              title="3. 검색엔진 친화도"
-              score={result.categories.searchFriendliness.score}
-              max={CATEGORY_META.searchFriendliness.max}
-              checks={result.categories.searchFriendliness.checks}
-            />
-            <CategorySection
-              title="4. 속도 최적화"
-              score={result.categories.speedOptimization.score}
-              max={CATEGORY_META.speedOptimization.max}
-              checks={result.categories.speedOptimization.checks}
-            />
+          <PrioritySection priorityFixes={result.priorityFixes} />
 
-            <div className="card category-card">
-              <div className="card-header">
-                <h2>보안 권장사항</h2>
-                <span
-                  className="score-pill"
-                  style={{
-                    background: pillStyle(result.security.score).background,
-                    color: pillStyle(result.security.score).color,
-                  }}
-                >
-                  {result.security.score}점
-                </span>
-              </div>
-              <CheckList checks={result.security.checks} />
+          <CategorySection
+            title="1. 콘텐츠 SEO"
+            score={result.categories.contentSeo.score}
+            max={CATEGORY_META.contentSeo.max}
+            checks={result.categories.contentSeo.checks}
+          />
+          <CategorySection
+            title="2. 테크니컬 SEO"
+            score={result.categories.technicalSeo.score}
+            max={CATEGORY_META.technicalSeo.max}
+            checks={result.categories.technicalSeo.checks}
+          />
+          <CategorySection
+            title="3. 검색엔진 친화도"
+            score={result.categories.searchFriendliness.score}
+            max={CATEGORY_META.searchFriendliness.max}
+            checks={result.categories.searchFriendliness.checks}
+          />
+          <CategorySection
+            title="4. 속도 최적화"
+            score={result.categories.speedOptimization.score}
+            max={CATEGORY_META.speedOptimization.max}
+            checks={result.categories.speedOptimization.checks}
+          />
+
+          <div className="card category-card">
+            <div className="card-header">
+              <h2>보안 권장사항</h2>
+              <span
+                className="score-pill"
+                style={{
+                  background: pillStyle(result.security.score).background,
+                  color: pillStyle(result.security.score).color,
+                }}
+              >
+                {result.security.score}점
+              </span>
             </div>
+            <CheckList checks={result.security.checks} />
+          </div>
 
-            <div className="footer-note">
-              분석 시각: {new Date(result.fetchedAt).toLocaleString("ko-KR")}
-            </div>
+          <div className="footer-note">
+            분석 시각: {new Date(result.fetchedAt).toLocaleString("ko-KR")}
           </div>
         </div>
       )}

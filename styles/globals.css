@@ -34,9 +34,13 @@ body {
 }
 
 .container {
-  max-width: 1120px;
+  max-width: 880px;
   margin: 0 auto;
   padding: 56px 20px 96px;
+}
+
+.content-col {
+  margin-top: 40px;
 }
 
 /* ---------- Header ---------- */
@@ -130,37 +134,6 @@ body {
   font-size: 14px;
 }
 
-/* ---------- Results layout ---------- */
-.results-grid {
-  margin-top: 40px;
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 24px;
-  align-items: start;
-}
-
-@media (max-width: 900px) {
-  .results-grid {
-    grid-template-columns: 1fr;
-  }
-  .sidebar {
-    position: static !important;
-    order: -1;
-  }
-}
-
-.main-col {
-  min-width: 0;
-}
-
-.sidebar {
-  position: sticky;
-  top: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
 /* ---------- Card base ---------- */
 .card {
   background: var(--bg-card);
@@ -170,60 +143,140 @@ body {
   padding: 24px;
 }
 
-/* ---------- Score card (sidebar) ---------- */
-.score-card {
-  text-align: center;
+/* ---------- Hero score card (dark) ---------- */
+.hero-card {
+  background: #0d0d0d;
+  border-radius: var(--card-radius);
+  padding: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
 }
 
-.score-card .score-eyebrow {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin: 0 0 6px;
+.hero-divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(255, 255, 255, 0.12);
 }
 
-.score-card .score-hero {
-  font-size: 56px;
+@media (max-width: 640px) {
+  .hero-card {
+    flex-direction: column;
+    gap: 24px;
+  }
+  .hero-divider {
+    width: 80%;
+    height: 1px;
+    align-self: center;
+  }
+}
+
+.score-ring-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.score-ring-wrap {
+  position: relative;
+}
+
+.score-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-ring-num {
+  font-size: 44px;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  color: #ffffff;
   line-height: 1;
-  margin: 4px 0 12px;
+  letter-spacing: -0.02em;
 }
 
-.grade-badge {
+.score-ring-max {
+  font-size: 13px;
+  color: #8e8e93;
+  margin-top: 4px;
+}
+
+.grade-badge-ring {
   display: inline-block;
+  margin-top: 16px;
+  padding: 6px 18px;
+  border-radius: 980px;
+  border: 1.5px solid;
+  font-weight: 600;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.meter-card-inline {
+  min-width: 240px;
+  flex: 1;
+  max-width: 320px;
+}
+
+.hero-card .meter-title {
   font-size: 13px;
   font-weight: 600;
-  padding: 6px 14px;
-  border-radius: 980px;
+  color: #a1a1a6;
+  margin: 0 0 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.score-url {
-  margin-top: 14px;
+.hero-card .meter-row .name {
+  color: #ffffff;
+}
+
+.hero-card .meter-row .value {
+  color: #a1a1a6;
+}
+
+.hero-card .meter-track {
+  background: #3a3a3c;
+}
+
+.hero-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 14px 4px 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reset-link-btn {
+  background: none;
+  border: none;
+  color: var(--accent-blue);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+.reset-link-btn:hover {
+  text-decoration: underline;
+}
+
+.hero-footer .score-url {
   font-size: 12px;
   color: var(--text-muted);
   word-break: break-all;
 }
 
-.reset-btn {
-  margin-top: 18px;
-  width: 100%;
-  background: var(--accent-blue-tint);
-  color: var(--accent-blue);
-  border: none;
-  border-radius: 980px;
-  padding: 11px 0;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.reset-btn:hover {
-  background: #e2f0ff;
-}
-
-/* ---------- Category meters (sidebar) ---------- */
-.meter-card .meter-title {
+/* ---------- Category meters ---------- */
+.meter-title {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary);
