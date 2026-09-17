@@ -143,10 +143,12 @@ body {
   padding: 24px;
 }
 
-/* ---------- Hero score card (dark) ---------- */
+/* ---------- Hero score card ---------- */
 .hero-card {
-  background: #0d0d0d;
+  background: var(--bg-card);
   border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-hairline);
   padding: 32px;
   display: flex;
   align-items: center;
@@ -158,7 +160,7 @@ body {
 .hero-divider {
   width: 1px;
   align-self: stretch;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--border-hairline);
 }
 
 @media (max-width: 640px) {
@@ -196,14 +198,14 @@ body {
 .score-ring-num {
   font-size: 44px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   line-height: 1;
   letter-spacing: -0.02em;
 }
 
 .score-ring-max {
   font-size: 13px;
-  color: #8e8e93;
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
@@ -212,37 +214,14 @@ body {
   margin-top: 16px;
   padding: 6px 18px;
   border-radius: 980px;
-  border: 1.5px solid;
   font-weight: 600;
   font-size: 14px;
-  background: rgba(255, 255, 255, 0.03);
 }
 
 .meter-card-inline {
   min-width: 240px;
   flex: 1;
   max-width: 320px;
-}
-
-.hero-card .meter-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #a1a1a6;
-  margin: 0 0 16px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.hero-card .meter-row .name {
-  color: #ffffff;
-}
-
-.hero-card .meter-row .value {
-  color: #a1a1a6;
-}
-
-.hero-card .meter-track {
-  background: #3a3a3c;
 }
 
 .hero-footer {

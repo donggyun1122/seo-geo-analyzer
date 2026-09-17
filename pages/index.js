@@ -28,11 +28,17 @@ function pillStyle(score) {
 }
 
 // 종합 점수 등급 (90~100 최우수 / 70~89 우수 / 50~69 보완 필요 / 0~49 위험)
+const GRADE_TINTS = {
+  good: { background: "#e7f7e7", color: STATUS.good },
+  warning: { background: "#fef3dd", color: "#b9790a" },
+  critical: { background: "#fbe9e8", color: STATUS.critical },
+};
+
 function overallGrade(score) {
-  if (score >= 90) return { label: "최우수", color: STATUS.good };
-  if (score >= 70) return { label: "우수", color: STATUS.good };
-  if (score >= 50) return { label: "보완 필요", color: STATUS.warning };
-  return { label: "위험", color: STATUS.critical };
+  if (score >= 90) return { label: "최우수", status: "good" };
+  if (score >= 70) return { label: "우수", status: "good" };
+  if (score >= 50) return { label: "보완 필요", status: "warning" };
+  return { label: "위험", status: "critical" };
 }
 
 function ScoreRing({ score, size = 168, stroke = 14 }) {
@@ -41,18 +47,20 @@ function ScoreRing({ score, size = 168, stroke = 14 }) {
   const progress = Math.max(0, Math.min(100, score)) / 100;
   const dashOffset = circumference * (1 - progress);
   const grade = overallGrade(score);
+  const ringColor = STATUS[grade.status];
+  const tint = GRADE_TINTS[grade.status];
 
   return (
     <div className="score-ring-block">
       <div className="score-ring-wrap" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#3a3a3c" strokeWidth={stroke} />
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e8e8ed" strokeWidth={stroke} />
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke={grade.color}
+            stroke={ringColor}
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={circumference}
@@ -65,7 +73,7 @@ function ScoreRing({ score, size = 168, stroke = 14 }) {
           <div className="score-ring-max">/ 100</div>
         </div>
       </div>
-      <span className="grade-badge-ring" style={{ borderColor: grade.color, color: grade.color }}>
+      <span className="grade-badge-ring" style={{ background: tint.background, color: tint.color }}>
         {grade.label}
       </span>
     </div>
