@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 
 const NAV_ITEMS = [
   { href: "/seo", label: "SEO" },
-  { href: "/geo", label: "GEO·SEO" },
+  { href: "/geo", label: "GEO·AEO" },
   { href: "/keyword", label: "키워드 분석" },
 ];
 
@@ -27,6 +27,7 @@ export default function NavBar() {
             </Link>
           ))}
         </nav>
+        <div className="site-nav-spacer" aria-hidden="true" />
       </div>
     </header>
   );
