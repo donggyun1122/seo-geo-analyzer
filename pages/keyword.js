@@ -13,6 +13,9 @@ function unavailableText(section) {
   if (!section) return "데이터를 가져오지 못했어요.";
   if (section.reason === "NOT_CONFIGURED") return "관련 API 키가 아직 설정되지 않았어요.";
   if (section.reason === "NO_DATA") return "데이터를 찾지 못했어요.";
+  if (section.reason === "ERROR" && section.error) {
+    return `일시적으로 데이터를 가져오지 못했어요. (${section.error})`;
+  }
   return "일시적으로 데이터를 가져오지 못했어요.";
 }
 
@@ -391,10 +394,10 @@ export default function KeywordPage() {
             <div className="card-header">
               <h2>검색량 트렌드 (최근 12개월)</h2>
             </div>
-            {trend && trend.available ? (
-              <TrendLineChart data={trend.trend} />
+            {trend && trend.monthly.available ? (
+              <TrendLineChart data={trend.monthly.trend} />
             ) : (
-              <p className="kw-stat-unavailable">{unavailableText(trend)}</p>
+              <p className="kw-stat-unavailable">{unavailableText(trend && trend.monthly)}</p>
             )}
           </div>
 
@@ -403,20 +406,20 @@ export default function KeywordPage() {
               <div className="card-header">
                 <h2>월별 검색 비율</h2>
               </div>
-              {trend && trend.available ? (
-                <RatioBarChart data={trend.byMonth} />
+              {trend && trend.monthly.available ? (
+                <RatioBarChart data={trend.monthly.byMonth} />
               ) : (
-                <p className="kw-stat-unavailable">{unavailableText(trend)}</p>
+                <p className="kw-stat-unavailable">{unavailableText(trend && trend.monthly)}</p>
               )}
             </div>
             <div className="card kw-chart-card">
               <div className="card-header">
                 <h2>요일별 검색 비율</h2>
               </div>
-              {trend && trend.available ? (
-                <RatioBarChart data={trend.byWeekday} />
+              {trend && trend.weekday.available ? (
+                <RatioBarChart data={trend.weekday.data} />
               ) : (
-                <p className="kw-stat-unavailable">{unavailableText(trend)}</p>
+                <p className="kw-stat-unavailable">{unavailableText(trend && trend.weekday)}</p>
               )}
             </div>
           </div>
@@ -426,20 +429,20 @@ export default function KeywordPage() {
               <div className="card-header">
                 <h2>연령별 검색 비율</h2>
               </div>
-              {trend && trend.available ? (
-                <RatioBarChart data={trend.byAge} />
+              {trend && trend.demographics.available ? (
+                <RatioBarChart data={trend.demographics.byAge} />
               ) : (
-                <p className="kw-stat-unavailable">{unavailableText(trend)}</p>
+                <p className="kw-stat-unavailable">{unavailableText(trend && trend.demographics)}</p>
               )}
             </div>
             <div className="card kw-chart-card">
               <div className="card-header">
                 <h2>성별 검색 비율</h2>
               </div>
-              {trend && trend.available ? (
-                <RatioBarChart data={trend.byGender} />
+              {trend && trend.demographics.available ? (
+                <RatioBarChart data={trend.demographics.byGender} />
               ) : (
-                <p className="kw-stat-unavailable">{unavailableText(trend)}</p>
+                <p className="kw-stat-unavailable">{unavailableText(trend && trend.demographics)}</p>
               )}
             </div>
           </div>
