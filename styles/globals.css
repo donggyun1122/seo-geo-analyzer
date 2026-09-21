@@ -1277,42 +1277,6 @@ svg {
   margin-bottom: 4px;
 }
 
-/* 제외 항목 안내 카드 */
-.kw-excluded-card {
-  margin-top: 24px;
-  background: var(--accent-blue-tint);
-  border-color: rgba(0, 113, 227, 0.16);
-}
-
-.kw-excluded-title {
-  font-weight: 700;
-  font-size: 15px;
-  margin: 0 0 6px;
-}
-
-.kw-excluded-desc {
-  font-size: 13.5px;
-  color: var(--text-secondary);
-  margin: 0 0 10px;
-  line-height: 1.6;
-}
-
-.kw-excluded-list {
-  margin: 0;
-  padding-left: 18px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.7;
-}
-
-.kw-excluded-list li + li {
-  margin-top: 6px;
-}
-
-.kw-excluded-list strong {
-  color: var(--text-primary);
-}
-
 /* 통계 카드 그리드 */
 .kw-stat-grid {
   display: grid;

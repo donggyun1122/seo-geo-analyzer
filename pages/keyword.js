@@ -16,34 +16,6 @@ function unavailableText(section) {
   return "일시적으로 데이터를 가져오지 못했어요.";
 }
 
-// ---------- 상단 안내: 이번 분석에서 제외된 항목 ----------
-function ExcludedNotice() {
-  return (
-    <div className="card kw-excluded-card">
-      <p className="kw-excluded-title">ℹ️ 이번 키워드 분석에 포함되지 않은 항목</p>
-      <p className="kw-excluded-desc">
-        아래 항목들은 네이버가 공식적으로 제공하는 API로는 가져올 수 없어서 이번 기능에서는 제외했어요.
-      </p>
-      <ul className="kw-excluded-list">
-        <li>
-          <strong>인기 급상승 키워드</strong> — 네이버는 2021년 실시간 급상승 검색어 서비스를 종료한 이후
-          관련 공식 API를 제공하지 않아요.
-        </li>
-        <li>
-          <strong>연령별 · 성별 검색 비율</strong> — 데이터랩 API에서는 &lsquo;쇼핑 카테고리&rsquo;에
-          한해서만 연령/성별 통계를 제공하고, 임의 키워드에 대한 통계는 제공하지 않아요.
-        </li>
-        <li>
-          <strong>검색결과 웹사이트 영역 TOP10 콘텐츠/사이트 정보</strong>,{" "}
-          <strong>PC/모바일 섹션 배치 순서</strong> — 네이버 검색결과 화면을 그대로 가져오는 공식 API가
-          없어서, 실제 검색결과 페이지를 직접 긁어와야 하는데 이는 네이버 이용약관에 위배될 수 있고
-          화면 구조가 바뀌면 바로 깨지는 방식이라 제외했어요.
-        </li>
-      </ul>
-    </div>
-  );
-}
-
 // ---------- 통계 카드 ----------
 function StatCard({ icon, label, unavailable, reason, children }) {
   return (
@@ -302,7 +274,7 @@ export default function KeywordPage() {
         <input
           ref={inputRef}
           type="text"
-          placeholder="분석할 키워드를 입력하세요 (예: 링크프라이스)"
+          placeholder="분석할 키워드를 입력하세요"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />
@@ -310,11 +282,8 @@ export default function KeywordPage() {
           {loading ? "분석 중..." : "분석하기"}
         </button>
       </form>
-      <p className="search-hint">데이터 출처: NAVER (검색광고 API · 검색 API · 데이터랩 API)</p>
 
       {error && <div className="error-box">{error}</div>}
-
-      {!result && !loading && <ExcludedNotice />}
 
       {loading && <p className="brand-empty kw-loading">네이버에서 키워드 데이터를 가져오는 중이에요...</p>}
 
@@ -452,6 +421,29 @@ export default function KeywordPage() {
             </div>
           </div>
 
+          <div className="split-row">
+            <div className="card kw-chart-card">
+              <div className="card-header">
+                <h2>연령별 검색 비율</h2>
+              </div>
+              {trend && trend.available ? (
+                <RatioBarChart data={trend.byAge} />
+              ) : (
+                <p className="kw-stat-unavailable">{unavailableText(trend)}</p>
+              )}
+            </div>
+            <div className="card kw-chart-card">
+              <div className="card-header">
+                <h2>성별 검색 비율</h2>
+              </div>
+              {trend && trend.available ? (
+                <RatioBarChart data={trend.byGender} />
+              ) : (
+                <p className="kw-stat-unavailable">{unavailableText(trend)}</p>
+              )}
+            </div>
+          </div>
+
           <div className="card category-card">
             <div className="card-header">
               <h2>연관 키워드</h2>
@@ -462,8 +454,6 @@ export default function KeywordPage() {
               <p className="kw-stat-unavailable">{unavailableText(searchVolume)}</p>
             )}
           </div>
-
-          <ExcludedNotice />
 
           <div className="footer-note">분석 시각: {new Date(result.fetchedAt).toLocaleString("ko-KR")}</div>
         </div>
