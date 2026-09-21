@@ -1265,3 +1265,334 @@ svg {
   max-width: 480px;
   margin: 0 auto 20px;
 }
+
+/* ---------- 키워드 분석 페이지 ---------- */
+.kw-loading {
+  text-align: center;
+  margin-top: 24px;
+}
+
+.kw-hero-footer {
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+/* 제외 항목 안내 카드 */
+.kw-excluded-card {
+  margin-top: 24px;
+  background: var(--accent-blue-tint);
+  border-color: rgba(0, 113, 227, 0.16);
+}
+
+.kw-excluded-title {
+  font-weight: 700;
+  font-size: 15px;
+  margin: 0 0 6px;
+}
+
+.kw-excluded-desc {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  margin: 0 0 10px;
+  line-height: 1.6;
+}
+
+.kw-excluded-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.kw-excluded-list li + li {
+  margin-top: 6px;
+}
+
+.kw-excluded-list strong {
+  color: var(--text-primary);
+}
+
+/* 통계 카드 그리드 */
+.kw-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+}
+
+@media (max-width: 720px) {
+  .kw-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .kw-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kw-stat-card {
+  min-width: 0;
+}
+
+.kw-stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.kw-stat-value {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .kw-stat-value {
+    font-size: 18px;
+  }
+}
+
+.kw-stat-sub {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.kw-stat-unavailable {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding: 6px 0;
+}
+
+.kw-saturation-pill {
+  font-size: 12px;
+}
+
+/* 차트 카드 */
+.kw-chart-card {
+  margin-top: 20px;
+}
+
+.kw-chart-card .card-header {
+  margin-bottom: 12px;
+}
+
+.kw-linechart {
+  position: relative;
+}
+
+.kw-linechart-svg {
+  width: 100%;
+  height: 200px;
+  display: block;
+  cursor: crosshair;
+}
+
+.kw-chart-grid {
+  stroke: var(--border-hairline);
+  stroke-width: 1;
+}
+
+.kw-chart-crosshair {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.kw-linechart-xaxis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding: 0 2px;
+}
+
+.kw-linechart-xaxis span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.kw-linechart-xaxis span.active {
+  color: var(--accent-blue);
+  font-weight: 700;
+}
+
+.kw-chart-tooltip {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  background: var(--text-primary);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 10px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  z-index: 2;
+}
+
+.kw-chart-tooltip-value {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.kw-chart-tooltip-label {
+  font-size: 11px;
+  opacity: 0.85;
+  margin-top: 1px;
+}
+
+/* 막대 차트 (월별/요일별 검색 비율) */
+.kw-barchart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 180px;
+  padding-top: 36px;
+}
+
+.kw-bar-col {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  outline: none;
+  cursor: pointer;
+}
+
+.kw-bar-track {
+  flex: 1;
+  width: 100%;
+  max-width: 28px;
+  display: flex;
+  align-items: flex-end;
+  background: var(--accent-blue-tint);
+  border-radius: 6px 6px 2px 2px;
+  overflow: hidden;
+}
+
+.kw-bar-fill {
+  width: 100%;
+  background: var(--accent-blue);
+  border-radius: 6px 6px 0 0;
+  transition: opacity 0.15s ease;
+}
+
+.kw-bar-col.hover .kw-bar-fill {
+  background: var(--accent-blue-hover);
+}
+
+.kw-bar-axislabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  white-space: nowrap;
+}
+
+.kw-bar-col.hover .kw-bar-axislabel {
+  color: var(--accent-blue);
+  font-weight: 700;
+}
+
+.kw-bar-tooltip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-primary);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 10px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  z-index: 2;
+}
+
+/* 연관 키워드 테이블 */
+.kw-table-wrap {
+  overflow-x: auto;
+  margin: 0 -4px;
+}
+
+.kw-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  min-width: 640px;
+}
+
+.kw-table th,
+.kw-table td {
+  padding: 10px 12px;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-hairline);
+  font-variant-numeric: tabular-nums;
+}
+
+.kw-table th:first-child,
+.kw-table td:first-child {
+  text-align: left;
+  font-variant-numeric: normal;
+}
+
+.kw-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.kw-table-keyword {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.kw-comp-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 980px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.kw-comp-badge.kw-comp-low {
+  background: #e7f7e7;
+  color: var(--status-good);
+}
+
+.kw-comp-badge.kw-comp-mid {
+  background: #fef3dd;
+  color: var(--status-warning);
+}
+
+.kw-comp-badge.kw-comp-high {
+  background: #fbe9e8;
+  color: var(--status-critical);
+}
+
+.kw-comp-badge.kw-comp-unknown {
+  background: #f0f0f2;
+  color: var(--text-muted);
+}
+
+.kw-table-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 12px 4px 0;
+  line-height: 1.6;
+}
