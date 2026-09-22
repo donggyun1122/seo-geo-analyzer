@@ -424,29 +424,6 @@ export default function KeywordPage() {
             </div>
           </div>
 
-          <div className="split-row">
-            <div className="card kw-chart-card">
-              <div className="card-header">
-                <h2>연령별 검색 비율</h2>
-              </div>
-              {trend && trend.demographics.available ? (
-                <RatioBarChart data={trend.demographics.byAge} />
-              ) : (
-                <p className="kw-stat-unavailable">{unavailableText(trend && trend.demographics)}</p>
-              )}
-            </div>
-            <div className="card kw-chart-card">
-              <div className="card-header">
-                <h2>성별 검색 비율</h2>
-              </div>
-              {trend && trend.demographics.available ? (
-                <RatioBarChart data={trend.demographics.byGender} />
-              ) : (
-                <p className="kw-stat-unavailable">{unavailableText(trend && trend.demographics)}</p>
-              )}
-            </div>
-          </div>
-
           <div className="card category-card">
             <div className="card-header">
               <h2>연관 키워드</h2>
