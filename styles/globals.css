@@ -1559,12 +1559,15 @@ svg {
 
 .kw-table-keyword-link {
   color: inherit;
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: var(--border-hairline);
+  text-underline-offset: 2px;
+  cursor: pointer;
 }
 
 .kw-table-keyword-link:hover {
   color: var(--accent-blue);
-  text-decoration: underline;
+  text-decoration-color: currentColor;
 }
 
 .kw-comp-badge {
