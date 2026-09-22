@@ -1560,7 +1560,7 @@ svg {
 .kw-table-keyword-link {
   color: inherit;
   text-decoration: underline;
-  text-decoration-color: var(--border-hairline);
+  text-decoration-color: var(--text-muted);
   text-underline-offset: 2px;
   cursor: pointer;
 }
