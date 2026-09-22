@@ -13,7 +13,7 @@ function formatNum(n) {
 
 function unavailableText(section) {
   if (!section) return "데이터를 가져오지 못했어요.";
-  if (section.reason === "NOT_CONFIGURED") return "관련 API 키가 아직 설정되지 않았어요.";
+  if (section.reason === "NOT_CONFIGURED") return "관련 설정이 아직 등록되지 않았어요.";
   if (section.reason === "NO_DATA") return "데이터를 찾지 못했어요.";
   if (section.reason === "NO_ANCHOR") return "월간 검색량 데이터가 있어야 실제 건수로 계산할 수 있어요.";
   if (section.reason === "ERROR" && section.error) {
@@ -356,7 +356,7 @@ function ContentTrendChart({ trend }) {
           </div>
         ))}
       </div>
-      <p className="brand-trend-note">최근 14일 · 블로그/뉴스만 표시돼요 (카페글 검색 API는 발행일 정보를 제공하지 않아요).</p>
+      <p className="brand-trend-note">최근 14일 · 블로그/뉴스만 표시돼요 (카페 검색 결과에는 발행일 정보가 없어요).</p>
     </div>
   );
 }

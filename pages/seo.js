@@ -217,7 +217,7 @@ function BrandTrendChart({ trend }) {
           </div>
         ))}
       </div>
-      <p className="brand-trend-note">최근 14일 · 블로그/뉴스만 표시돼요 (카페글 검색 API는 발행일 정보를 제공하지 않아요).</p>
+      <p className="brand-trend-note">최근 14일 · 블로그/뉴스만 표시돼요 (카페 검색 결과에는 발행일 정보가 없어요).</p>
     </div>
   );
 }
