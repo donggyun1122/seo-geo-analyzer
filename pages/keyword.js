@@ -224,6 +224,11 @@ function RelatedKeywordTable({ related, totalFound }) {
               <th>PC 검색량</th>
               <th>모바일 검색량</th>
               <th>합계</th>
+              <th>PC 클릭수</th>
+              <th>모바일 클릭수</th>
+              <th>PC 클릭률</th>
+              <th>모바일 클릭률</th>
+              <th>평균 노출 광고 수</th>
               <th>광고 경쟁정도</th>
               <th>블로그 누적발행량</th>
               <th>철자 유사도</th>
@@ -236,6 +241,11 @@ function RelatedKeywordTable({ related, totalFound }) {
                 <td>{r.pcLabel}</td>
                 <td>{r.mobileLabel}</td>
                 <td>{formatNum(r.totalCount)}</td>
+                <td>{r.pcClickLabel}</td>
+                <td>{r.mobileClickLabel}</td>
+                <td>{r.pcCtrLabel}</td>
+                <td>{r.mobileCtrLabel}</td>
+                <td>{r.adDepthLabel}</td>
                 <td>
                   <span className={`kw-comp-badge kw-comp-${COMP_STYLE[r.compIdx] || "unknown"}`}>
                     {r.compIdx}
@@ -282,7 +292,8 @@ function RelatedKeywordTable({ related, totalFound }) {
       <p className="kw-table-note">
         연관 키워드 {formatNum(totalFound)}개 중 검색량 상위 {related.length}개를 10개씩 나눠
         보여드려요. 블로그 누적발행량은 상위 {BLOG_ENRICH_LIMIT}개 키워드까지만 추가로
-        조회돼요. &lsquo;광고 경쟁정도&rsquo;는 광고 입찰 경쟁 수준이며, 실제 SEO(자연 검색)
+        조회돼요. 클릭수·클릭률·평균 노출 광고 수는 검색광고 입찰가 산정 화면 기준 최근 한 달
+        평균값이에요. &lsquo;광고 경쟁정도&rsquo;는 광고 입찰 경쟁 수준이며, 실제 SEO(자연 검색)
         경쟁도와는 다를 수 있어요.
       </p>
     </div>
@@ -390,6 +401,27 @@ export default function KeywordPage() {
                   <div className="kw-stat-sub kw-stat-sub-split">
                     <span className="kw-stat-sub-item">PC {searchVolume.seed.pcLabel}회</span>
                     <span className="kw-stat-sub-item">모바일 {searchVolume.seed.mobileLabel}회</span>
+                  </div>
+                </>
+              )}
+            </StatCard>
+
+            <StatCard
+              icon="📊"
+              label="광고 클릭 지표"
+              unavailable={!searchVolume || !searchVolume.available}
+              reason={searchVolume}
+            >
+              {searchVolume && searchVolume.available && (
+                <>
+                  <div className="kw-stat-value">평균 노출 광고 수 {searchVolume.seed.adDepthLabel}</div>
+                  <div className="kw-stat-sub kw-stat-sub-split">
+                    <span className="kw-stat-sub-item">클릭률 PC {searchVolume.seed.pcCtrLabel}</span>
+                    <span className="kw-stat-sub-item">모바일 {searchVolume.seed.mobileCtrLabel}</span>
+                  </div>
+                  <div className="kw-stat-sub kw-stat-sub-split">
+                    <span className="kw-stat-sub-item">클릭수 PC {searchVolume.seed.pcClickLabel}회</span>
+                    <span className="kw-stat-sub-item">모바일 {searchVolume.seed.mobileClickLabel}회</span>
                   </div>
                 </>
               )}
