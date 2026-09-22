@@ -322,7 +322,7 @@ function BrandDetailSection({ keyword, result }) {
     <div id="brand-detail">
       <div className="header brand-detail-header">
         <h2>브랜드 콘텐츠 발행 현황 — &ldquo;{keyword}&rdquo;</h2>
-        <p>네이버 블로그·뉴스·카페 검색 기준이에요.</p>
+        <p>블로그·뉴스·카페에 올라온 콘텐츠를 기준으로 집계했어요.</p>
       </div>
       <div className="card brand-trend-card">
         <BrandTrendChart trend={result.trend} />

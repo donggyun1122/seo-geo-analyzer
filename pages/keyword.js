@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 
 const BLOG_ENRICH_LIMIT = 15;
+const RELATED_PAGE_SIZE = 10;
 
 const COMP_STYLE = { 낮음: "low", 중간: "mid", 높음: "high" };
 
@@ -13,6 +14,7 @@ function unavailableText(section) {
   if (!section) return "데이터를 가져오지 못했어요.";
   if (section.reason === "NOT_CONFIGURED") return "관련 API 키가 아직 설정되지 않았어요.";
   if (section.reason === "NO_DATA") return "데이터를 찾지 못했어요.";
+  if (section.reason === "NO_ANCHOR") return "월간 검색량 데이터가 있어야 실제 건수로 계산할 수 있어요.";
   if (section.reason === "ERROR" && section.error) {
     return `일시적으로 데이터를 가져오지 못했어요. (${section.error})`;
   }
@@ -35,21 +37,30 @@ function StatCard({ icon, label, unavailable, reason, children }) {
   );
 }
 
-// ---------- 검색량 트렌드 (12개월, 라인 차트 + 마우스오버 크로스헤어) ----------
-function TrendLineChart({ data }) {
+// ---------- 월별 검색 추이 (PC·모바일, 12개월, 라인 차트 + 마우스오버 크로스헤어) ----------
+function DeviceTrendChart({ data }) {
   const [hoverIdx, setHoverIdx] = useState(null);
   const svgRef = useRef(null);
   const W = 640;
-  const H = 200;
+  const H = 220;
   const PAD_X = 20;
   const PAD_TOP = 16;
   const PAD_BOTTOM = 28;
   const n = data.length;
-  const maxRatio = Math.max(1, ...data.map((d) => d.ratio));
+  const allValues = data
+    .flatMap((d) => [d.pc, d.mobile])
+    .filter((v) => typeof v === "number");
+  const maxValue = Math.max(1, ...allValues);
 
   const xAt = (i) => PAD_X + (n <= 1 ? 0 : (i / (n - 1)) * (W - PAD_X * 2));
-  const yAt = (v) => H - PAD_BOTTOM - (v / maxRatio) * (H - PAD_TOP - PAD_BOTTOM);
-  const points = data.map((d, i) => `${xAt(i)},${yAt(d.ratio)}`).join(" ");
+  const yAt = (v) => H - PAD_BOTTOM - (v / maxValue) * (H - PAD_TOP - PAD_BOTTOM);
+
+  function pointsFor(key) {
+    return data
+      .map((d, i) => (typeof d[key] === "number" ? `${xAt(i)},${yAt(d[key])}` : null))
+      .filter(Boolean)
+      .join(" ");
+  }
 
   function handleMove(e) {
     if (!svgRef.current) return;
@@ -65,6 +76,14 @@ function TrendLineChart({ data }) {
 
   return (
     <div className="kw-linechart">
+      <div className="kw-linechart-legend">
+        <span className="kw-legend-item">
+          <span className="kw-legend-dot" style={{ background: "var(--accent-blue)" }} /> PC
+        </span>
+        <span className="kw-legend-item">
+          <span className="kw-legend-dot" style={{ background: "#ff9f0a" }} /> 모바일
+        </span>
+      </div>
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
@@ -72,7 +91,7 @@ function TrendLineChart({ data }) {
         onMouseMove={handleMove}
         onMouseLeave={() => setHoverIdx(null)}
         role="img"
-        aria-label="최근 12개월 검색량 트렌드"
+        aria-label="최근 12개월 PC·모바일 검색 추이"
       >
         {[0, 0.5, 1].map((t) => (
           <line
@@ -85,23 +104,44 @@ function TrendLineChart({ data }) {
           />
         ))}
         <polyline
-          points={points}
+          points={pointsFor("pc")}
           fill="none"
           stroke="var(--accent-blue)"
           strokeWidth="2"
           strokeLinejoin="round"
           strokeLinecap="round"
         />
+        <polyline
+          points={pointsFor("mobile")}
+          fill="none"
+          stroke="#ff9f0a"
+          strokeWidth="2"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
         {data.map((d, i) => (
-          <circle
-            key={d.period}
-            cx={xAt(i)}
-            cy={yAt(d.ratio)}
-            r={hoverIdx === i ? 5 : 0}
-            fill="var(--accent-blue)"
-            stroke="#fff"
-            strokeWidth="2"
-          />
+          <g key={d.period || i}>
+            {typeof d.pc === "number" && (
+              <circle
+                cx={xAt(i)}
+                cy={yAt(d.pc)}
+                r={hoverIdx === i ? 5 : 0}
+                fill="var(--accent-blue)"
+                stroke="#fff"
+                strokeWidth="2"
+              />
+            )}
+            {typeof d.mobile === "number" && (
+              <circle
+                cx={xAt(i)}
+                cy={yAt(d.mobile)}
+                r={hoverIdx === i ? 5 : 0}
+                fill="#ff9f0a"
+                stroke="#fff"
+                strokeWidth="2"
+              />
+            )}
+          </g>
         ))}
         {hoverIdx !== null && (
           <line x1={hoveredX} x2={hoveredX} y1={PAD_TOP} y2={H - PAD_BOTTOM} className="kw-chart-crosshair" />
@@ -109,25 +149,30 @@ function TrendLineChart({ data }) {
       </svg>
       <div className="kw-linechart-xaxis">
         {data.map((d, i) => (
-          <span key={d.period} className={i === hoverIdx ? "active" : ""}>
+          <span key={d.period || i} className={i === hoverIdx ? "active" : ""}>
             {d.monthLabel}
           </span>
         ))}
       </div>
       {hovered && (
         <div className="kw-chart-tooltip" style={{ left: `${tooltipLeftPct}%` }}>
-          <div className="kw-chart-tooltip-value">{hovered.ratio.toFixed(1)}</div>
-          <div className="kw-chart-tooltip-label">{hovered.label} 상대 검색비율(최고월=100)</div>
+          <div className="kw-chart-tooltip-value">
+            PC {typeof hovered.pc === "number" ? formatNum(hovered.pc) : "-"}건
+          </div>
+          <div className="kw-chart-tooltip-value">
+            모바일 {typeof hovered.mobile === "number" ? formatNum(hovered.mobile) : "-"}건
+          </div>
+          <div className="kw-chart-tooltip-label">{hovered.monthLabel}</div>
         </div>
       )}
     </div>
   );
 }
 
-// ---------- 월별 / 요일별 검색 비율 (막대 차트 + 마우스오버 툴팁) ----------
-function RatioBarChart({ data }) {
+// ---------- 월별 / 요일별 검색 건수 (막대 차트 + 마우스오버 툴팁) ----------
+function ValueBarChart({ data }) {
   const [hoverIdx, setHoverIdx] = useState(null);
-  const max = Math.max(1, ...data.map((d) => d.percent));
+  const max = Math.max(1, ...data.map((d) => d.value));
 
   return (
     <div className="kw-barchart">
@@ -143,12 +188,12 @@ function RatioBarChart({ data }) {
         >
           {hoverIdx === i && (
             <div className="kw-bar-tooltip">
-              <div className="kw-chart-tooltip-value">{d.percent}%</div>
+              <div className="kw-chart-tooltip-value">{formatNum(d.value)}건</div>
               <div className="kw-chart-tooltip-label">{d.label}</div>
             </div>
           )}
           <div className="kw-bar-track">
-            <div className="kw-bar-fill" style={{ height: `${Math.max(4, (d.percent / max) * 100)}%` }} />
+            <div className="kw-bar-fill" style={{ height: `${Math.max(4, (d.value / max) * 100)}%` }} />
           </div>
           <div className="kw-bar-axislabel">{d.label}</div>
         </div>
@@ -157,11 +202,18 @@ function RatioBarChart({ data }) {
   );
 }
 
-// ---------- 연관 키워드 테이블 ----------
+// ---------- 연관 키워드 테이블 (10개씩 페이지네이션) ----------
 function RelatedKeywordTable({ related, totalFound }) {
+  const [page, setPage] = useState(0);
+
   if (!related || related.length === 0) {
     return <p className="brand-empty">연관 키워드를 찾지 못했어요.</p>;
   }
+
+  const totalPages = Math.max(1, Math.ceil(related.length / RELATED_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageItems = related.slice(safePage * RELATED_PAGE_SIZE, safePage * RELATED_PAGE_SIZE + RELATED_PAGE_SIZE);
+
   return (
     <div>
       <div className="kw-table-wrap">
@@ -178,7 +230,7 @@ function RelatedKeywordTable({ related, totalFound }) {
             </tr>
           </thead>
           <tbody>
-            {related.map((r) => (
+            {pageItems.map((r) => (
               <tr key={r.keyword}>
                 <td className="kw-table-keyword">{r.keyword}</td>
                 <td>{r.pcLabel}</td>
@@ -202,10 +254,36 @@ function RelatedKeywordTable({ related, totalFound }) {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="kw-table-pagination">
+          <button
+            type="button"
+            className="kw-page-btn"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={safePage === 0}
+          >
+            ← 이전
+          </button>
+          <span className="kw-page-indicator">
+            {safePage + 1} / {totalPages}
+          </span>
+          <button
+            type="button"
+            className="kw-page-btn"
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={safePage === totalPages - 1}
+          >
+            다음 →
+          </button>
+        </div>
+      )}
+
       <p className="kw-table-note">
-        검색광고 API 기준 연관 키워드 {formatNum(totalFound)}개 중 검색량 상위 {related.length}개를
-        표시했어요. 블로그 누적발행량은 상위 {BLOG_ENRICH_LIMIT}개 키워드까지만 추가로 조회돼요. &lsquo;광고
-        경쟁정도&rsquo;는 검색광고 입찰 경쟁 수준이며, 실제 SEO(자연 검색) 경쟁도와는 다를 수 있어요.
+        연관 키워드 {formatNum(totalFound)}개 중 검색량 상위 {related.length}개를 10개씩 나눠
+        보여드려요. 블로그 누적발행량은 상위 {BLOG_ENRICH_LIMIT}개 키워드까지만 추가로
+        조회돼요. &lsquo;광고 경쟁정도&rsquo;는 광고 입찰 경쟁 수준이며, 실제 SEO(자연 검색)
+        경쟁도와는 다를 수 있어요.
       </p>
     </div>
   );
@@ -270,7 +348,7 @@ export default function KeywordPage() {
     <div className="container">
       <div className="header">
         <h1>키워드 분석</h1>
-        <p>네이버 기준으로 키워드의 검색량, 연관 키워드, 콘텐츠 발행 현황과 검색 트렌드를 분석해드려요.</p>
+        <p>키워드의 검색량, 연관 키워드, 콘텐츠 발행 현황과 검색 트렌드를 분석해드려요.</p>
       </div>
 
       <form className="search-box" onSubmit={handleSubmit}>
@@ -288,7 +366,7 @@ export default function KeywordPage() {
 
       {error && <div className="error-box">{error}</div>}
 
-      {loading && <p className="brand-empty kw-loading">네이버에서 키워드 데이터를 가져오는 중이에요...</p>}
+      {loading && <p className="brand-empty kw-loading">키워드 데이터를 가져오는 중이에요...</p>}
 
       {result && (
         <div className="content-col">
@@ -302,30 +380,17 @@ export default function KeywordPage() {
           <div className="kw-stat-grid">
             <StatCard
               icon="🔍"
-              label="월간 검색량 (PC + 모바일)"
+              label="월간 검색량"
               unavailable={!searchVolume || !searchVolume.available}
               reason={searchVolume}
             >
               {searchVolume && searchVolume.available && (
                 <>
                   <div className="kw-stat-value">{monthlyTotalLabel}</div>
-                  <div className="kw-stat-sub">
-                    PC {searchVolume.seed.pcLabel}회 · 모바일 {searchVolume.seed.mobileLabel}회
+                  <div className="kw-stat-sub kw-stat-sub-split">
+                    <span className="kw-stat-sub-item">PC {searchVolume.seed.pcLabel}회</span>
+                    <span className="kw-stat-sub-item">모바일 {searchVolume.seed.mobileLabel}회</span>
                   </div>
-                </>
-              )}
-            </StatCard>
-
-            <StatCard
-              icon="📈"
-              label="이번 달 예상 검색량"
-              unavailable={!searchVolume || !searchVolume.available}
-              reason={searchVolume}
-            >
-              {searchVolume && searchVolume.available && (
-                <>
-                  <div className="kw-stat-value">{monthlyTotalLabel}</div>
-                  <div className="kw-stat-sub">네이버 검색광고 API의 최근 집계 기준 추정치예요.</div>
                 </>
               )}
             </StatCard>
@@ -392,32 +457,32 @@ export default function KeywordPage() {
 
           <div className="card kw-chart-card">
             <div className="card-header">
-              <h2>검색량 트렌드 (최근 12개월)</h2>
+              <h2>월별 검색 추이 (PC · 모바일, 최근 12개월)</h2>
             </div>
-            {trend && trend.monthly.available ? (
-              <TrendLineChart data={trend.monthly.trend} />
+            {trend && trend.monthlyDevice.available ? (
+              <DeviceTrendChart data={trend.monthlyDevice.data} />
             ) : (
-              <p className="kw-stat-unavailable">{unavailableText(trend && trend.monthly)}</p>
+              <p className="kw-stat-unavailable">{unavailableText(trend && trend.monthlyDevice)}</p>
             )}
           </div>
 
           <div className="split-row">
             <div className="card kw-chart-card">
               <div className="card-header">
-                <h2>월별 검색 비율</h2>
+                <h2>월별 검색 건수</h2>
               </div>
               {trend && trend.monthly.available ? (
-                <RatioBarChart data={trend.monthly.byMonth} />
+                <ValueBarChart data={trend.monthly.data} />
               ) : (
                 <p className="kw-stat-unavailable">{unavailableText(trend && trend.monthly)}</p>
               )}
             </div>
             <div className="card kw-chart-card">
               <div className="card-header">
-                <h2>요일별 검색 비율</h2>
+                <h2>요일별 검색 건수</h2>
               </div>
               {trend && trend.weekday.available ? (
-                <RatioBarChart data={trend.weekday.data} />
+                <ValueBarChart data={trend.weekday.data} />
               ) : (
                 <p className="kw-stat-unavailable">{unavailableText(trend && trend.weekday)}</p>
               )}
@@ -429,7 +494,11 @@ export default function KeywordPage() {
               <h2>연관 키워드</h2>
             </div>
             {searchVolume && searchVolume.available ? (
-              <RelatedKeywordTable related={searchVolume.related} totalFound={searchVolume.totalRelatedFound} />
+              <RelatedKeywordTable
+                key={`${result.keyword}-${result.fetchedAt}`}
+                related={searchVolume.related}
+                totalFound={searchVolume.totalRelatedFound}
+              />
             ) : (
               <p className="kw-stat-unavailable">{unavailableText(searchVolume)}</p>
             )}
