@@ -178,6 +178,15 @@ function formatCount(n) {
   return n.toLocaleString("ko-KR");
 }
 
+// 특정 하루에 발행량이 유독 많으면(예: 이슈성 뉴스 폭증) 선형 비율로는 다른 날들이
+// 전부 점처럼 눌려버려서 "이전 데이터가 아예 안 보인다"는 착시가 생겨요.
+// 제곱근 스케일을 쓰면 큰 값과 작은 값의 차이는 유지하면서도, 값이 있는 날은
+// 최소한의 막대 높이를 갖도록 완만하게 눌러줍니다.
+function trendBarHeight(value, maxVal) {
+  if (value <= 0) return 0;
+  return Math.max(6, Math.sqrt(value / maxVal) * 100);
+}
+
 function BrandTrendChart({ trend }) {
   const maxVal = Math.max(1, ...trend.map((d) => Math.max(d.blog, d.news)));
   return (
@@ -199,7 +208,7 @@ function BrandTrendChart({ trend }) {
               <div
                 className="brand-trend-bar"
                 style={{
-                  height: `${Math.max(d.blog > 0 ? 4 : 0, (d.blog / maxVal) * 100)}px`,
+                  height: `${trendBarHeight(d.blog, maxVal)}px`,
                   background: BRAND_SOURCE_META.blog.color,
                 }}
                 title={`블로그 ${d.blog}건`}
@@ -207,7 +216,7 @@ function BrandTrendChart({ trend }) {
               <div
                 className="brand-trend-bar"
                 style={{
-                  height: `${Math.max(d.news > 0 ? 4 : 0, (d.news / maxVal) * 100)}px`,
+                  height: `${trendBarHeight(d.news, maxVal)}px`,
                   background: BRAND_SOURCE_META.news.color,
                 }}
                 title={`뉴스 ${d.news}건`}
@@ -281,7 +290,7 @@ function BrandSummaryCard({ keyword, onKeywordChange, onSubmit, loading, error, 
 
       {error && <p className="brand-summary-error">{error}</p>}
 
-      {!error && !result && loading && <p className="brand-empty">네이버에서 관련 콘텐츠를 찾는 중이에요...</p>}
+      {!error && !result && loading && <p className="brand-empty">관련 콘텐츠를 분석하는 중이에요...</p>}
       {!error && !result && !loading && <p className="brand-empty">키워드를 확인하고 분석해보세요.</p>}
 
       {result && (

@@ -749,7 +749,8 @@ svg {
 
 .brand-trend-bar {
   width: 8px;
-  border-radius: 4px 4px 0 0;
+  min-height: 3px;
+  border-radius: 2px 2px 0 0;
   transition: height 0.15s ease;
 }
 
