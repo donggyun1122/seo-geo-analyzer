@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/router";
 
 const BLOG_ENRICH_LIMIT = 15;
 const RELATED_PAGE_SIZE = 10;
@@ -237,7 +238,16 @@ function RelatedKeywordTable({ related, totalFound }) {
           <tbody>
             {pageItems.map((r) => (
               <tr key={r.keyword}>
-                <td className="kw-table-keyword">{r.keyword}</td>
+                <td className="kw-table-keyword">
+                  <a
+                    href={`/keyword?keyword=${encodeURIComponent(r.keyword)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="kw-table-keyword-link"
+                  >
+                    {r.keyword}
+                  </a>
+                </td>
                 <td>{r.pcLabel}</td>
                 <td>{r.mobileLabel}</td>
                 <td>{formatNum(r.totalCount)}</td>
@@ -301,11 +311,13 @@ function RelatedKeywordTable({ related, totalFound }) {
 }
 
 export default function KeywordPage() {
+  const router = useRouter();
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
   const inputRef = useRef(null);
+  const autoRunKeywordRef = useRef(null);
 
   async function runAnalyze(rawKeyword) {
     const kw = (rawKeyword || "").trim();
@@ -344,6 +356,20 @@ export default function KeywordPage() {
     if (inputRef.current) inputRef.current.focus();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
+  // 연관 키워드를 클릭해 새 창(/keyword?keyword=...)으로 넘어온 경우, 그 키워드로
+  // 자동으로 분석을 실행합니다. (같은 키워드로 두 번 실행되지 않도록 ref로 기억해둬요.)
+  useEffect(() => {
+    if (!router.isReady) return;
+    const q = router.query.keyword;
+    const kw = Array.isArray(q) ? q[0] : q;
+    if (typeof kw === "string" && kw.trim() && autoRunKeywordRef.current !== kw) {
+      autoRunKeywordRef.current = kw;
+      setKeyword(kw);
+      runAnalyze(kw);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady, router.query.keyword]);
 
   const content = result && result.content;
   const searchVolume = result && result.searchVolume;
