@@ -310,12 +310,124 @@ function RelatedKeywordTable({ related, totalFound }) {
   );
 }
 
+// ---------- 발행 콘텐츠 현황 (블로그/뉴스/카페 — SEO 점검 페이지와 동일한 방식) ----------
+const CONTENT_SOURCE_META = {
+  blog: { label: "블로그", color: "#0071e3" },
+  news: { label: "뉴스", color: "#5e5ce6" },
+  cafearticle: { label: "카페", color: "#8e8e93" },
+};
+
+function ContentTrendChart({ trend }) {
+  const maxVal = Math.max(1, ...trend.map((d) => Math.max(d.blog, d.news)));
+  return (
+    <div className="brand-trend">
+      <div className="brand-trend-legend">
+        <span className="brand-legend-item">
+          <span className="brand-legend-dot" style={{ background: CONTENT_SOURCE_META.blog.color }} />
+          블로그
+        </span>
+        <span className="brand-legend-item">
+          <span className="brand-legend-dot" style={{ background: CONTENT_SOURCE_META.news.color }} />
+          뉴스
+        </span>
+      </div>
+      <div className="brand-trend-chart">
+        {trend.map((d) => (
+          <div className="brand-trend-col" key={d.key}>
+            <div className="brand-trend-bars">
+              <div
+                className="brand-trend-bar"
+                style={{
+                  height: `${Math.max(d.blog > 0 ? 4 : 0, (d.blog / maxVal) * 100)}px`,
+                  background: CONTENT_SOURCE_META.blog.color,
+                }}
+                title={`블로그 ${d.blog}건`}
+              />
+              <div
+                className="brand-trend-bar"
+                style={{
+                  height: `${Math.max(d.news > 0 ? 4 : 0, (d.news / maxVal) * 100)}px`,
+                  background: CONTENT_SOURCE_META.news.color,
+                }}
+                title={`뉴스 ${d.news}건`}
+              />
+            </div>
+            <div className="brand-trend-daylabel">{d.label}</div>
+          </div>
+        ))}
+      </div>
+      <p className="brand-trend-note">최근 14일 · 블로그/뉴스만 표시돼요 (카페글 검색 API는 발행일 정보를 제공하지 않아요).</p>
+    </div>
+  );
+}
+
+function ContentItemList({ items }) {
+  if (!items || items.length === 0) {
+    return <p className="brand-empty">최근 게시물을 찾지 못했어요.</p>;
+  }
+  return (
+    <div>
+      {items.map((it, idx) => (
+        <div className="brand-item" key={`${it.link}-${idx}`}>
+          <a className="brand-item-title" href={it.link} target="_blank" rel="noopener noreferrer">
+            {it.title}
+          </a>
+          {it.dateLabel && <div className="brand-item-date">{it.dateLabel}</div>}
+          {it.description && <div className="brand-item-desc">{it.description}</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ContentSourceCard({ sourceKey, source }) {
+  const meta = CONTENT_SOURCE_META[sourceKey];
+  return (
+    <div className="card brand-source-card">
+      <div className="card-header">
+        <h2>{meta.label}</h2>
+        <span className="score-pill" style={{ background: "#f0f7ff", color: meta.color }}>
+          약 {formatNum(source.total)}건
+        </span>
+      </div>
+      {source.hasDates ? (
+        <p className="brand-source-sub">
+          최근 7일 {source.count7d}건 · 최근 30일 {source.count30d}건 (표시 중인 {source.fetchedCount}건 기준)
+        </p>
+      ) : (
+        <p className="brand-source-sub">발행일 정보가 제공되지 않아 최근 {source.fetchedCount}건만 표시돼요.</p>
+      )}
+      <ContentItemList items={source.items} />
+    </div>
+  );
+}
+
+function ContentPublishSection({ keyword, result }) {
+  return (
+    <div>
+      <div className="header brand-detail-header">
+        <h2>발행 콘텐츠 현황 — &ldquo;{keyword}&rdquo;</h2>
+        <p>블로그·뉴스·카페에 실제로 올라온 콘텐츠 목록이에요.</p>
+      </div>
+      <div className="card brand-trend-card">
+        <ContentTrendChart trend={result.trend} />
+      </div>
+      <ContentSourceCard sourceKey="blog" source={result.sources.blog} />
+      <ContentSourceCard sourceKey="news" source={result.sources.news} />
+      <ContentSourceCard sourceKey="cafearticle" source={result.sources.cafearticle} />
+    </div>
+  );
+}
+
 export default function KeywordPage() {
   const router = useRouter();
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [publishResult, setPublishResult] = useState(null);
+  const [publishError, setPublishError] = useState("");
+  const [publishLoading, setPublishLoading] = useState(false);
   const inputRef = useRef(null);
   const autoRunKeywordRef = useRef(null);
 
@@ -325,6 +437,8 @@ export default function KeywordPage() {
     setLoading(true);
     setError("");
     setResult(null);
+    setPublishResult(null);
+    setPublishError("");
     try {
       const res = await fetch("/api/keyword-analysis", {
         method: "POST",
@@ -344,6 +458,31 @@ export default function KeywordPage() {
     }
   }
 
+  async function runPublishAnalyze(rawKeyword) {
+    const kw = (rawKeyword || "").trim();
+    if (!kw) return;
+    setPublishLoading(true);
+    setPublishError("");
+    setPublishResult(null);
+    try {
+      const res = await fetch("/api/brand-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keyword: kw }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setPublishError(data.error || "발행 현황을 가져오지 못했습니다.");
+      } else {
+        setPublishResult(data);
+      }
+    } catch (err) {
+      setPublishError("발행 현황 요청 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setPublishLoading(false);
+    }
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     runAnalyze(keyword);
@@ -353,9 +492,19 @@ export default function KeywordPage() {
     setResult(null);
     setError("");
     setKeyword("");
+    setPublishResult(null);
+    setPublishError("");
     if (inputRef.current) inputRef.current.focus();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
+  // 키워드 분석이 끝나면, 같은 키워드로 블로그/뉴스/카페 발행 현황도 자동으로 가져옵니다.
+  useEffect(() => {
+    if (result && result.keyword) {
+      runPublishAnalyze(result.keyword);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   // 연관 키워드를 클릭해 새 창(/keyword?keyword=...)으로 넘어온 경우, 그 키워드로
   // 자동으로 분석을 실행합니다. (같은 키워드로 두 번 실행되지 않도록 ref로 기억해둬요.)
@@ -561,6 +710,12 @@ export default function KeywordPage() {
               <p className="kw-stat-unavailable">{unavailableText(searchVolume)}</p>
             )}
           </div>
+
+          <div className="section-divider" />
+
+          {publishLoading && <p className="brand-empty kw-loading">발행 콘텐츠를 가져오는 중이에요...</p>}
+          {publishError && <div className="error-box">{publishError}</div>}
+          {publishResult && <ContentPublishSection keyword={publishResult.keyword} result={publishResult} />}
 
           <div className="footer-note">분석 시각: {new Date(result.fetchedAt).toLocaleString("ko-KR")}</div>
         </div>
