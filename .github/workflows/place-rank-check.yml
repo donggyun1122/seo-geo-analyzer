@@ -38,11 +38,34 @@ jobs:
         with:
           node-version: "20"
 
-      - name: 의존성 설치
+      # package-lock.json이 없어도 되도록 package.json 해시로 캐시 키를 만들어요.
+      # 캐시가 있으면 npm install / Playwright 브라우저 다운로드를 건너뛸 수 있어서
+      # "지금 측정하기" 버튼을 눌렀을 때 체감 대기시간이 크게 줄어들어요.
+      - name: 의존성 캐시 확인
+        id: npm-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package.json') }}
+
+      - name: 의존성 설치 (캐시 없을 때만)
+        if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install
 
-      - name: Playwright 브라우저 설치
+      - name: Playwright 브라우저 캐시 확인
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package.json') }}
+
+      - name: Playwright 브라우저 설치 (캐시 없을 때만 — 처음 실행이라 가장 오래 걸리는 단계예요)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      - name: Playwright 시스템 라이브러리만 설치 (브라우저는 캐시에서 재사용)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: 순위 측정 실행
         env:
