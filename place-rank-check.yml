@@ -1,0 +1,52 @@
+# 매일 한 번, 등록된 모든 매장/키워드의 네이버 플레이스 순위를 측정해서 Supabase에 기록합니다.
+# 헤드리스 브라우저(Playwright)가 필요해서 Vercel 서버리스 함수 대신 이 워크플로에서 실행합니다.
+#
+# 웹 화면의 "지금 측정하기" 버튼을 누르면 place_keyword_id 입력값과 함께 이 워크플로가
+# API(workflow_dispatch)로 수동 실행돼서, 그 키워드 하나만 바로 측정합니다.
+# (place_keyword_id를 안 넘기면 = 매일 새벽 스케줄과 동일하게 등록된 전체 키워드를 측정합니다.)
+#
+# 사용 전 준비:
+#  1. GitHub 저장소 Settings → Secrets and variables → Actions 에서 아래 두 개를 등록하세요.
+#     - SUPABASE_URL
+#     - SUPABASE_SERVICE_ROLE_KEY  (anon key 아님 — service role key. 절대 클라이언트 코드에 넣지 마세요)
+#  2. 저장소 Settings → Actions → General 에서 Actions 실행이 허용되어 있는지 확인하세요.
+#  3. "지금 측정하기" 버튼을 쓰려면 Vercel에 GITHUB_TOKEN / GITHUB_REPO도 등록해야 해요.
+#     (자세한 내용은 README.md의 "플레이스 순위 기능 — 설정 방법" 참고)
+name: place-rank-check
+
+on:
+  schedule:
+    # 매일 21:00 UTC = 한국시간(KST) 오전 6시. 필요에 맞게 조정하세요.
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+    inputs:
+      place_keyword_id:
+        description: "이 값을 채우면 해당 키워드 하나만, 비워두면 등록된 전체 키워드를 측정합니다 (Actions 탭에서 수동 실행할 때는 보통 비워두면 됩니다)."
+        required: false
+        type: string
+
+jobs:
+  check-ranks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 의존성 설치
+        run: npm install
+
+      - name: Playwright 브라우저 설치
+        run: npx playwright install --with-deps chromium
+
+      - name: 순위 측정 실행
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PLACE_KEYWORD_ID: ${{ github.event.inputs.place_keyword_id }}
+        run: node scripts/run-place-rank-checks.js
