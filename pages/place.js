@@ -336,8 +336,11 @@ export default function PlacePage() {
 
   function pollForCheckResult(placeKeywordId, requestedAt) {
     const startedAt = Date.now();
-    const MAX_WAIT_MS = 120000; // 2분 — 이보다 오래 걸리면 타임아웃으로 안내
-    const INTERVAL_MS = 5000;
+    // GitHub Actions가 큐에서 대기하다 실행되고, 캐시가 없는 첫 실행은 npm install +
+    // Playwright 브라우저 설치까지 새로 해서 3~5분씩 걸릴 수 있어요. 그래서 넉넉하게 8분까지
+    // 기다려요(두 번째 실행부터는 캐시 덕분에 훨씬 빨라져요).
+    const MAX_WAIT_MS = 480000; // 8분 — 이보다 오래 걸리면 타임아웃으로 안내
+    const INTERVAL_MS = 6000;
 
     const tick = async () => {
       try {
@@ -369,7 +372,8 @@ export default function PlacePage() {
           ...s,
           [placeKeywordId]: {
             phase: "timeout",
-            message: "시간이 오래 걸리고 있어요. GitHub 저장소의 Actions 탭에서 진행 상황을 확인해보세요.",
+            message:
+              "8분이 지나도 결과가 안 왔어요. GitHub 저장소의 Actions 탭에서 워크플로가 실제로 실행 중인지, 에러로 멈추지 않았는지 확인해보세요. (처음 실행이라면 npm install/브라우저 설치까지 새로 하느라 원래도 오래 걸려요 — 완료되면 다음부터는 캐시 덕분에 훨씬 빨라져요.)",
           },
         }));
       }
@@ -563,7 +567,7 @@ export default function PlacePage() {
 
       <p className="footer-note">
         순위는 기본적으로 매일 한 번(GitHub Actions 스케줄) 측정돼요. 키워드별 &ldquo;지금 측정하기&rdquo;를 누르면
-        그 자리에서 한 번 더 측정을 요청할 수 있어요(결과가 나오기까지 보통 수십 초~1~2분 정도 걸려요). 네이버가
+        그 자리에서 한 번 더 측정을 요청할 수 있어요(처음 실행은 3~5분, 이후엔 캐시 덕분에 1~2분 정도로 줄어들어요). 네이버가
         자동화된 접근으로 판단해 결과를 제한하면 우회하지 않고 &ldquo;접근 제한&rdquo; 상태로 그대로 기록해요.
       </p>
     </div>
