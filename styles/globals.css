@@ -754,6 +754,32 @@ svg {
   transition: height 0.15s ease;
 }
 
+/* "0건"과 구분되는 "확인 불가" 표시 — 발행량이 너무 많아 API 조회 한도(1,000건)에
+   걸려서 그 이전 날짜를 셀 수 없는 경우. 값이 있는 막대와 헷갈리지 않도록 빗금 패턴을 씁니다. */
+.brand-trend-bar-unknown {
+  height: 18px;
+  border-radius: 2px 2px 0 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    #d5d5da,
+    #d5d5da 3px,
+    #ececef 3px,
+    #ececef 6px
+  );
+  opacity: 0.9;
+}
+
+.brand-legend-dot-unknown {
+  border-radius: 2px;
+  background-image: repeating-linear-gradient(
+    45deg,
+    #d5d5da,
+    #d5d5da 2px,
+    #ececef 2px,
+    #ececef 4px
+  );
+}
+
 .brand-trend-daylabel {
   font-size: 10px;
   color: var(--text-muted);
@@ -767,6 +793,15 @@ svg {
   margin: 12px 0 0;
 }
 
+.brand-trend-caveat {
+  font-size: 12px;
+  color: #b9790a;
+  background: #fef3dd;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 10px 0 0;
+}
+
 .brand-source-card {
   margin-top: 20px;
 }
@@ -774,6 +809,15 @@ svg {
 .brand-source-sub {
   font-size: 13px;
   color: var(--text-secondary);
+  margin: 0 0 12px;
+}
+
+.brand-source-caveat {
+  font-size: 12px;
+  color: #b9790a;
+  background: #fef3dd;
+  border-radius: 8px;
+  padding: 6px 10px;
   margin: 0 0 12px;
 }
 

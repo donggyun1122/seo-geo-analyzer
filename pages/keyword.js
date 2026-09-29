@@ -321,13 +321,16 @@ const CONTENT_SOURCE_META = {
 // 전부 점처럼 눌려버려서 "이전 데이터가 아예 안 보인다"는 착시가 생겨요.
 // 제곱근 스케일을 쓰면 큰 값과 작은 값의 차이는 유지하면서도, 값이 있는 날은
 // 최소한의 막대 높이를 갖도록 완만하게 눌러줍니다.
+// (값이 null이면 "0건"이 아니라 "발행량이 많아 확인이 불가능한 날"이라는 뜻이라
+//  높이 계산에서 제외하고 별도의 빗금 막대로 표시합니다.)
 function trendBarHeight(value, maxVal) {
-  if (value <= 0) return 0;
+  if (!value || value <= 0) return 0;
   return Math.max(6, Math.sqrt(value / maxVal) * 100);
 }
 
-function ContentTrendChart({ trend }) {
-  const maxVal = Math.max(1, ...trend.map((d) => Math.max(d.blog, d.news)));
+function ContentTrendChart({ trend, coverageNote }) {
+  const knownValues = trend.flatMap((d) => [d.blog, d.news]).filter((v) => v !== null && v !== undefined);
+  const maxVal = Math.max(1, ...knownValues);
   return (
     <div className="brand-trend">
       <div className="brand-trend-legend">
@@ -339,33 +342,48 @@ function ContentTrendChart({ trend }) {
           <span className="brand-legend-dot" style={{ background: CONTENT_SOURCE_META.news.color }} />
           뉴스
         </span>
+        {coverageNote && (
+          <span className="brand-legend-item">
+            <span className="brand-legend-dot brand-legend-dot-unknown" />
+            확인 불가
+          </span>
+        )}
       </div>
       <div className="brand-trend-chart">
         {trend.map((d) => (
           <div className="brand-trend-col" key={d.key}>
             <div className="brand-trend-bars">
-              <div
-                className="brand-trend-bar"
-                style={{
-                  height: `${trendBarHeight(d.blog, maxVal)}px`,
-                  background: CONTENT_SOURCE_META.blog.color,
-                }}
-                title={`블로그 ${d.blog}건`}
-              />
-              <div
-                className="brand-trend-bar"
-                style={{
-                  height: `${trendBarHeight(d.news, maxVal)}px`,
-                  background: CONTENT_SOURCE_META.news.color,
-                }}
-                title={`뉴스 ${d.news}건`}
-              />
+              {d.blog === null ? (
+                <div className="brand-trend-bar brand-trend-bar-unknown" title="블로그: 발행량이 많아 확인 불가" />
+              ) : (
+                <div
+                  className="brand-trend-bar"
+                  style={{
+                    height: `${trendBarHeight(d.blog, maxVal)}px`,
+                    background: CONTENT_SOURCE_META.blog.color,
+                  }}
+                  title={`블로그 ${d.blog}건`}
+                />
+              )}
+              {d.news === null ? (
+                <div className="brand-trend-bar brand-trend-bar-unknown" title="뉴스: 발행량이 많아 확인 불가" />
+              ) : (
+                <div
+                  className="brand-trend-bar"
+                  style={{
+                    height: `${trendBarHeight(d.news, maxVal)}px`,
+                    background: CONTENT_SOURCE_META.news.color,
+                  }}
+                  title={`뉴스 ${d.news}건`}
+                />
+              )}
             </div>
             <div className="brand-trend-daylabel">{d.label}</div>
           </div>
         ))}
       </div>
       <p className="brand-trend-note">최근 14일 · 블로그/뉴스만 표시돼요 (카페 검색 결과에는 발행일 정보가 없어요).</p>
+      {coverageNote && <p className="brand-trend-caveat">⚠ {coverageNote}</p>}
     </div>
   );
 }
@@ -401,10 +419,16 @@ function ContentSourceCard({ sourceKey, source }) {
       </div>
       {source.hasDates ? (
         <p className="brand-source-sub">
-          최근 7일 {source.count7d}건 · 최근 30일 {source.count30d}건 (표시 중인 {source.fetchedCount}건 기준)
+          최근 7일 {source.count7d}건{source.coverageIncomplete7d ? " 이상" : ""} · 최근 30일 {source.count30d}건
+          {source.coverageIncomplete30d ? " 이상" : ""} (표시 중인 {source.fetchedCount}건 기준)
         </p>
       ) : (
         <p className="brand-source-sub">발행일 정보가 제공되지 않아 최근 {source.fetchedCount}건만 표시돼요.</p>
+      )}
+      {source.coverageIncomplete30d && (
+        <p className="brand-source-caveat">
+          ⚠ 발행량이 많아 최근 {source.coverageDays}일치까지만 정확히 확인했어요. 그 이전 기간은 실제로 더 있을 수 있어요.
+        </p>
       )}
       <ContentItemList items={source.items} />
     </div>
@@ -419,7 +443,7 @@ function ContentPublishSection({ keyword, result }) {
         <p>블로그·뉴스·카페에 실제로 올라온 콘텐츠 목록이에요.</p>
       </div>
       <div className="card brand-trend-card">
-        <ContentTrendChart trend={result.trend} />
+        <ContentTrendChart trend={result.trend} coverageNote={result.trendCoverageNote} />
       </div>
       <ContentSourceCard sourceKey="blog" source={result.sources.blog} />
       <ContentSourceCard sourceKey="news" source={result.sources.news} />
