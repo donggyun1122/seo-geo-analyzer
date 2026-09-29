@@ -78,6 +78,11 @@ http://localhost:3000 에서 확인할 수 있습니다.
 
 1. [supabase.com](https://supabase.com)에서 새 프로젝트를 만듭니다 (무료 플랜으로 충분해요).
 2. 프로젝트 대시보드의 **SQL Editor**에서 `supabase/schema.sql` 파일 내용을 그대로 붙여넣고 실행하세요. `places`, `place_keywords`, `rank_checks` 테이블과 `place_keyword_latest` 뷰가 만들어져요.
+   - ⚠️ **이미 예전 버전의 스키마를 실행해서 테이블이 이미 있는 경우**에는 `create table if not exists`가 기존 테이블을 건드리지 않기 때문에 `rank_checks.request_id` 컬럼이 새로 생기지 않아요. 이 경우 SQL Editor에서 아래 두 줄만 추가로 실행해주세요.
+     ```sql
+     alter table rank_checks add column if not exists request_id text;
+     create index if not exists idx_rank_checks_request_id on rank_checks (request_id);
+     ```
 3. 프로젝트 설정(Project Settings → API)에서 다음 값을 확인하세요.
    - **Project URL** → `SUPABASE_URL`
    - **service_role key** (anon key 아님! service role key는 비공개 키예요) → `SUPABASE_SERVICE_ROLE_KEY`
@@ -120,4 +125,6 @@ http://localhost:3000 에서 확인할 수 있습니다.
 - `lib/placeRank/PlaywrightPlaceRankProvider.js` 안의 CSS 선택자(`RESULT_ITEM_SELECTOR` 등)는 네이버 플레이스 검색 결과 페이지의 구조를 참고해 작성했지만, 실제 라이브 페이지로 검증하지 못한 상태예요. 처음 실행했을 때 계속 `error` 상태(결과 목록을 못 찾음)가 나온다면, 브라우저 개발자도구로 실제 페이지 구조를 확인하고 이 선택자들을 맞춰주세요. 네이버가 마크업을 바꿀 때마다 다시 손봐야 하는 건 비공식 스크래핑의 구조적인 한계예요.
 - "지금 측정하기"는 GitHub Actions 워크플로를 호출만 할 뿐, 실제 측정 자체는 여전히 별도 실행 환경(GitHub Actions)에서 이루어져요. Playwright를 Vercel 요청 안에서 직접 실행하지 않는 이유는 서버리스 환경의 실행시간 제한·콜드스타트 문제 때문이에요 — 그래서 버튼을 눌러도 "즉시"가 아니라 "수십 초~분 단위로 빠르게" 결과가 나오는 구조예요.
 - GitHub Actions 무료 플랜은 분당 실행 시간에 한도가 있어요("지금 측정하기"를 아주 자주 누르면 소진될 수 있어요). 개인 프로젝트 수준의 사용량이면 보통 문제 없어요.
+- **검색 위치(searchLocation)는 아직 실제 검색에 반영되지 않아요.** 키워드 등록 화면에서 "검색 위치"를 입력하면 Supabase에는 그대로 저장되지만, 네이버 플레이스 검색 요청 자체에는 아직 반영하지 않고 있어요. 네이버가 위치를 지정하는 공식적이고 검증된 방식(좌표 파라미터 등)을 확인하지 못한 상태에서 추측으로 구현하면 오히려 잘못된 결과를 그럴듯하게 보여줄 위험이 있어서, 검증 전까지는 이 상태를 유지하기로 했어요. 즉 지금은 "서울 마포구"를 입력하든 비워두든 같은 검색 결과를 봅니다.
+- **"지금 측정하기"는 requestId(요청마다 고유한 UUID) 기준으로 결과를 찾아요.** GitHub Actions dispatch API는 실행을 접수했다는 응답(204)만 줄 뿐 실제로 성공했는지는 알려주지 않기 때문에, 화면은 여전히 Supabase에 결과가 쌓이는지 폴링해서 확인해요. 다만 예전에는 "요청 시각 이후에 생긴 결과"로 판단해서 동시에 여러 번 측정하면 다른 요청의 결과를 잘못 가져올 수 있었는데, 지금은 매 요청의 고유 ID로 정확히 매칭해요. `rank_checks`에 결과가 저장되면(성공이든 error/blocked든) 화면에 그 상태와 실제 오류 메시지가 그대로 표시돼요 — 결과가 아예 안 쌓이는 경우(워크플로 자체가 큐에서 멈췄거나 실패)만 "시간 초과"로 표시됩니다.
 - 지금은 로그인/회원 시스템이 없는 1인 전용 도구로 설계했어요. 여러 사용자가 쓰는 서비스로 확장하려면 `places`/`place_keywords` 테이블에 `user_id`를 추가하고 Supabase Row Level Security를 켜야 해요 (스키마 파일에 자리를 잡아뒀어요).

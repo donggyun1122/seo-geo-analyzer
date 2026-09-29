@@ -39,7 +39,13 @@ async function loadSingleKeyword(supabase, placeKeywordId) {
 }
 
 async function saveResult(supabase, placeKeyword, result) {
+  // 지금 측정하기(웹 화면)로 실행된 경우 REQUEST_ID가 채워져 있고, 매일 자동 배치라면 비어있어요.
+  // 이 값으로 화면이 "이 요청에 대한 결과"를 정확히 찾아요(측정 시각 비교 방식은 여러 요청이
+  // 겹치거나 서버 시간이 어긋나면 잘못된 결과를 집어올 수 있어서 request_id로 대체했어요).
+  const requestId = process.env.REQUEST_ID && process.env.REQUEST_ID.trim() ? process.env.REQUEST_ID.trim() : null;
+
   const { error } = await supabase.from("rank_checks").insert({
+    request_id: requestId,
     place_keyword_id: placeKeyword.id,
     place_id: placeKeyword.place_id,
     keyword: placeKeyword.keyword,

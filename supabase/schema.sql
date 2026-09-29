@@ -48,14 +48,26 @@ create table if not exists rank_checks (
   max_rank_checked integer,          -- 몇 위까지 확인했는지 (not_found일 때 "적어도 이 순위 밖" 의미로 사용)
   error_message text,                -- status가 blocked/error일 때 원인 기록
   raw_top_results jsonb,             -- 디버깅용: 확인한 상위 결과 스냅샷 [{placeId, name, rank}, ...]
+  request_id text,                   -- "지금 측정하기" 버튼이 보낸 요청의 고유 ID. 이 값으로 어느 요청의
+                                      -- 결과인지 정확히 매칭한다(측정 시각 비교 방식은 쓰지 않음).
+                                      -- 매일 자동 배치처럼 버튼 요청이 아닌 경우는 null.
   created_at timestamptz not null default now()
 );
 
 create index if not exists idx_rank_checks_keyword_time
   on rank_checks (place_keyword_id, measured_at desc);
 
+create index if not exists idx_rank_checks_request_id
+  on rank_checks (request_id);
+
 create index if not exists idx_place_keywords_active
   on place_keywords (is_active);
+
+-- ⚠️ 이미 스키마를 실행해서 테이블이 만들어져 있는 상태라면(기존 사용자),
+-- 위 "create table if not exists"는 이미 있는 테이블을 건드리지 않으므로 request_id 컬럼이
+-- 추가되지 않습니다. 그런 경우 아래 한 줄만 SQL Editor에서 따로 실행해주세요:
+--   alter table rank_checks add column if not exists request_id text;
+--   create index if not exists idx_rank_checks_request_id on rank_checks (request_id);
 
 -- 특정 키워드의 "현재 순위"와 "전일 순위"를 바로 조회할 수 있는 뷰.
 -- (measured_at 기준 가장 최근 값 = 현재, 그 이전 값 = 전일로 취급합니다.

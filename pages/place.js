@@ -121,6 +121,7 @@ const CHECK_PHASE_LABEL = {
   done: "완료!",
   timeout: "시간 초과",
   error: "실패",
+  blocked: "접근 제한",
 };
 
 function CheckNowCell({ row, state, onCheckNow }) {
@@ -334,7 +335,7 @@ export default function PlacePage() {
     await loadAll();
   }
 
-  function pollForCheckResult(placeKeywordId, requestedAt) {
+  function pollForCheckResult(placeKeywordId, requestId) {
     const startedAt = Date.now();
     // GitHub Actions가 큐에서 대기하다 실행되고, 캐시가 없는 첫 실행은 npm install +
     // Playwright 브라우저 설치까지 새로 해서 3~5분씩 걸릴 수 있어요. 그래서 넉넉하게 8분까지
@@ -345,13 +346,36 @@ export default function PlacePage() {
     const tick = async () => {
       try {
         const res = await fetch(
-          `/api/place/check-status?placeKeywordId=${placeKeywordId}&since=${encodeURIComponent(requestedAt)}`
+          `/api/place/check-status?placeKeywordId=${placeKeywordId}&requestId=${encodeURIComponent(requestId)}`
         );
         const data = await res.json();
         if (data.ok && data.done) {
           clearInterval(pollTimers.current[placeKeywordId]);
           delete pollTimers.current[placeKeywordId];
-          setCheckState((s) => ({ ...s, [placeKeywordId]: { phase: "done", message: "" } }));
+
+          const result = data.result || {};
+          // rank_checks에 결과가 저장됐다는 건 GitHub Actions/Playwright까지는 실행이
+          // 끝났다는 뜻이에요. 다만 status가 error/blocked면 "측정 자체는 끝났지만 실패"인
+          // 거라, 무조건 "완료!"로 표시하지 않고 실제 원인을 그대로 보여줘요.
+          if (result.status === "error") {
+            setCheckState((s) => ({
+              ...s,
+              [placeKeywordId]: { phase: "error", message: `측정 실패: ${result.errorMessage || "원인 불명의 오류예요."}` },
+            }));
+          } else if (result.status === "blocked") {
+            setCheckState((s) => ({
+              ...s,
+              [placeKeywordId]: {
+                phase: "blocked",
+                message: `측정 제한: ${result.errorMessage || "네이버가 자동화 접근을 제한했어요."}`,
+              },
+            }));
+          } else {
+            // ok 또는 not_found — 둘 다 "측정은 정상적으로 끝난" 상태라 표 갱신만 하면 돼요.
+            // (not_found는 표에서 이미 "순위 밖"으로 표시돼요.)
+            setCheckState((s) => ({ ...s, [placeKeywordId]: { phase: "done", message: "" } }));
+          }
+
           await loadAll();
           setTimeout(() => {
             setCheckState((s) => {
@@ -359,7 +383,7 @@ export default function PlacePage() {
               delete next[placeKeywordId];
               return next;
             });
-          }, 4000);
+          }, 6000);
           return;
         }
       } catch (err) {
@@ -400,7 +424,7 @@ export default function PlacePage() {
         setCheckState((s) => ({ ...s, [placeKeywordId]: { phase: "error", message: data.error || "요청에 실패했어요." } }));
         return;
       }
-      pollForCheckResult(placeKeywordId, data.requestedAt);
+      pollForCheckResult(placeKeywordId, data.requestId);
     } catch (err) {
       setCheckState((s) => ({ ...s, [placeKeywordId]: { phase: "error", message: "요청 중 오류가 발생했어요." } }));
     }
@@ -507,7 +531,10 @@ export default function PlacePage() {
             <tbody>
               {keywordRows.map((row) => {
                 const state = checkState[row.placeKeywordId];
-                const showMessage = state && (state.phase === "error" || state.phase === "timeout") && state.message;
+                const showMessage =
+                  state &&
+                  (state.phase === "error" || state.phase === "timeout" || state.phase === "blocked") &&
+                  state.message;
                 return (
                   <Fragment key={row.placeKeywordId}>
                     <tr
