@@ -24,6 +24,10 @@ on:
         description: "이 값을 채우면 해당 키워드 하나만, 비워두면 등록된 전체 키워드를 측정합니다 (Actions 탭에서 수동 실행할 때는 보통 비워두면 됩니다)."
         required: false
         type: string
+      request_id:
+        description: "웹 화면의 '지금 측정하기'가 자동으로 채우는 값이에요. Actions 탭에서 수동 실행할 때는 비워두면 됩니다."
+        required: false
+        type: string
 
 jobs:
   check-ranks:
@@ -67,9 +71,27 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
+      # Secrets가 하나라도 비어있으면 여기서 바로, 명확한 메시지로 실패시킵니다.
+      # (값 자체는 절대 로그에 출력하지 않고 "있다/없다"만 확인합니다.)
+      - name: 필수 환경변수(Secrets) 확인
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node -e "
+          for (const k of ['SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY']) {
+            if (!process.env[k] || !process.env[k].trim()) {
+              console.error('필수 환경변수가 없습니다: ' + k + ' — 저장소 Settings > Secrets and variables > Actions 에서 등록해주세요.');
+              process.exit(1);
+            }
+          }
+          console.log('필수 환경변수 확인 완료 (값 자체는 출력하지 않습니다).');
+          "
+
       - name: 순위 측정 실행
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           PLACE_KEYWORD_ID: ${{ github.event.inputs.place_keyword_id }}
+          REQUEST_ID: ${{ github.event.inputs.request_id }}
         run: node scripts/run-place-rank-checks.js
