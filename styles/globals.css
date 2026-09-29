@@ -1687,3 +1687,173 @@ svg {
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
+
+.kw-page-btn.active {
+  background: var(--accent-blue);
+  color: #fff;
+}
+
+/* ---- 플레이스 순위 페이지 ---- */
+.place-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.place-form input[type="text"] {
+  flex: 1;
+  min-width: 180px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.place-form select {
+  padding: 10px 14px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #fff;
+}
+
+.place-form button {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent-blue);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.place-form button:disabled {
+  background: #b9d6fb;
+  cursor: not-allowed;
+}
+
+.place-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.place-table th {
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.place-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.place-table-row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.place-table-row:hover {
+  background: #f7f9fc;
+}
+
+.rank-change {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.rank-change-up {
+  color: #0ca30c;
+}
+
+.rank-change-down {
+  color: #d03b3b;
+}
+
+.rank-change-flat {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.place-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.place-remove-btn:hover {
+  color: #d03b3b;
+}
+
+.place-detail-card {
+  margin: 4px 0 14px;
+}
+
+.place-window-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.place-checknow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.place-checknow-btn {
+  background: #fff;
+  border: 1px solid var(--border-hairline);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.place-checknow-btn:hover:not(:disabled) {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.place-checknow-btn:disabled {
+  cursor: default;
+  color: var(--text-muted);
+  background: #f5f6f8;
+}
+
+.place-checknow-status {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.place-checknow-status-done {
+  color: #0ca30c;
+}
+
+.place-checknow-status-timeout,
+.place-checknow-status-error {
+  color: #d03b3b;
+  cursor: help;
+}
+
+.place-checknow-message {
+  font-size: 12px;
+  color: #d03b3b;
+  background: #fbe9e8;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 0;
+}

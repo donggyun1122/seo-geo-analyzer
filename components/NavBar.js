@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { href: "/seo", label: "SEO" },
   { href: "/geo", label: "GEO·AEO" },
   { href: "/keyword", label: "키워드 분석" },
+  { href: "/place", label: "플레이스 순위" },
 ];
 
 export default function NavBar() {
