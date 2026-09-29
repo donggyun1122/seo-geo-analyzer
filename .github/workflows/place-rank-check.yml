@@ -40,7 +40,7 @@ jobs:
       - name: Node.js 설정
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       # package-lock.json이 없어도 되도록 package.json 해시로 캐시 키를 만들어요.
       # 캐시가 있으면 npm install / Playwright 브라우저 다운로드를 건너뛸 수 있어서
