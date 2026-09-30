@@ -136,3 +136,101 @@ create index if not exists idx_keyword_place_lists_request_id
   on keyword_place_lists (request_id);
 
 -- alter table keyword_place_lists enable row level security; -- 다중 사용자로 확장 시
+
+-- ============================================================================
+-- "네이버 쇼핑 분석" 기능 (2026-09-30 추가)
+--
+-- 두 가지 하위 기능을 지원합니다:
+--  1) 네이버 쇼핑 키워드 분석 — 등록한 키워드를 매일 자동으로 검사해서 노출 상품
+--     스냅샷을 계속 쌓고, 최신 스냅샷과 그 이전 스냅샷을 비교해 순위/가격 변동
+--     화살표(▲▼)를 보여줍니다(플레이스 순위 기능과 동일한 "등록 + 매일 자동 실행" 방식).
+--  2) 네이버 쇼핑 순위 체크 — 키워드와 특정 상품(URL/ID)을 입력하면 그 자리에서 1회
+--     조회해서 광고 영역/광고 제외 영역 중 선택한 쪽에서 몇 위인지 보여줍니다
+--     (등록 없이 매번 온디맨드로 조회 — keyword_place_lists와 동일한 방식).
+
+-- 매일 자동으로 추적할 쇼핑 키워드
+create table if not exists shopping_keywords (
+  id uuid primary key default gen_random_uuid(),
+  keyword text not null,
+  max_rank integer not null default 50 check (max_rank in (50, 100, 200)),
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  unique (keyword)
+);
+
+-- 쇼핑 키워드 분석 스냅샷 (매일 누적 — 절대 덮어쓰지 않고 계속 insert).
+-- 상품 하나하나가 아니라 "그 시점의 전체 노출 목록"을 결과 하나(jsonb)로 저장합니다 —
+-- 전일 대비 순위/가격 변동은 화면에서 최신 스냅샷과 그 이전 스냅샷을 상품 ID 기준으로
+-- 매칭해서 계산합니다(rank_checks의 place_keyword_latest 뷰와 같은 아이디어를, 상품이
+-- 여러 개인 목록이라 SQL 뷰 대신 API 코드에서 처리합니다).
+create table if not exists shopping_keyword_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  shopping_keyword_id uuid not null references shopping_keywords(id) on delete cascade,
+  keyword text not null,              -- 측정 시점의 키워드 스냅샷
+  max_rank integer not null,
+  measured_at timestamptz not null default now(),
+  status text not null check (status in ('ok', 'blocked', 'error')),
+  error_message text,
+  results jsonb,                      -- [{rank, isAd, contentsGrp, name, image, price, category,
+                                       --   mallName, sellerCount, rating, reviewCount, zzimCount,
+                                       --   purchaseText, productUrl, catalogNvMid, nvMid, chnlProdNo}, ...]
+  request_id text,                    -- "지금 분석하기" 버튼 요청과 매칭 (매일 자동 배치는 null)
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_shopping_keyword_snapshots_kw_time
+  on shopping_keyword_snapshots (shopping_keyword_id, measured_at desc);
+
+create index if not exists idx_shopping_keyword_snapshots_request_id
+  on shopping_keyword_snapshots (request_id);
+
+create index if not exists idx_shopping_keywords_active
+  on shopping_keywords (is_active);
+
+-- 등록된 쇼핑 키워드의 "최신 분석 상태"를 바로 조회하는 뷰 (place_keyword_latest와 같은 역할).
+-- 상품별 순위/가격 변동(전일 대비)은 상품이 여러 개인 배열(jsonb)이라 SQL 뷰가 아니라
+-- API 코드(pages/api/shopping-keyword/results.js)에서 최신·이전 스냅샷을 상품 ID 기준으로
+-- 매칭해서 계산합니다 — 이 뷰는 등록 목록 화면에 보여줄 요약 정보만 제공합니다.
+create or replace view shopping_keyword_latest as
+select
+  sk.id as shopping_keyword_id,
+  sk.keyword,
+  sk.max_rank,
+  sk.is_active,
+  latest.status as current_status,
+  latest.measured_at as current_measured_at,
+  latest.error_message as current_error_message,
+  case when latest.results is not null then jsonb_array_length(latest.results) else null end as current_item_count
+from shopping_keywords sk
+left join lateral (
+  select status, measured_at, error_message, results
+  from shopping_keyword_snapshots s
+  where s.shopping_keyword_id = sk.id
+  order by measured_at desc
+  limit 1
+) latest on true;
+
+-- 쇼핑 순위 체크 (등록 없이 요청마다 1행 — keyword_place_lists와 동일한 온디맨드 방식)
+create table if not exists shopping_rank_checks (
+  id uuid primary key default gen_random_uuid(),
+  request_id text not null,
+  keyword text not null,
+  product_id_input text not null,     -- 사용자가 붙여넣은 원본 URL/ID 문자열
+  product_id_value text,              -- extractShoppingProductId.js가 뽑아낸 숫자 ID
+  product_id_space text,              -- 'nv_mid' | 'catalog_nv_mid' | 'chnl_prod_no' | 'unknown'
+  area_mode text not null check (area_mode in ('ad', 'organic')),
+  max_rank integer not null,
+  status text not null check (status in ('ok', 'not_found', 'blocked', 'error')),
+  error_message text,
+  rank integer,                       -- status='ok'일 때만 값이 있음
+  max_rank_checked integer,
+  matched_item jsonb,                 -- status='ok'일 때 찾은 상품의 상세 정보
+  requested_at timestamptz not null default now()
+);
+
+create index if not exists idx_shopping_rank_checks_request_id
+  on shopping_rank_checks (request_id);
+
+-- alter table shopping_keywords enable row level security; -- 다중 사용자로 확장 시
+-- alter table shopping_keyword_snapshots enable row level security;
+-- alter table shopping_rank_checks enable row level security;

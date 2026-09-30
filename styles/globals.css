@@ -926,6 +926,81 @@ svg {
   border-bottom-color: var(--accent-blue);
 }
 
+/* "네이버 쇼핑 분석" 처럼 하위 메뉴가 있는 항목 — 마우스오버 시 서브메뉴가 나타납니다.
+   padding-bottom/margin-bottom로 트리거와 서브메뉴 사이에 보이지 않는 여백을 만들어서,
+   마우스가 그 사이를 지나갈 때 hover가 끊기지 않도록 했어요. */
+.site-nav-dropdown {
+  position: relative;
+  display: inline-flex;
+  padding-bottom: 14px;
+  margin-bottom: -14px;
+}
+
+.site-nav-dropdown-trigger {
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.site-nav-dropdown-caret {
+  font-size: 10px;
+  color: var(--text-secondary);
+  transition: transform 0.15s ease;
+}
+
+.site-nav-dropdown:hover .site-nav-dropdown-caret {
+  transform: rotate(180deg);
+}
+
+.site-nav-submenu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid var(--border-hairline);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  z-index: 30;
+}
+
+.site-nav-dropdown:hover .site-nav-submenu,
+.site-nav-dropdown:focus-within .site-nav-submenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.site-nav-submenu-link {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-nav-submenu-link:hover {
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--text-primary);
+}
+
+.site-nav-submenu-link.active {
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
 @media (max-width: 640px) {
   .site-nav-inner {
     grid-template-columns: 1fr;
@@ -945,6 +1020,32 @@ svg {
   }
   .site-nav-link {
     font-size: 13px;
+  }
+  /* 모바일은 마우스오버가 없어서, 드롭다운 대신 하위 메뉴를 항상 펼쳐서 보여줍니다. */
+  .site-nav-dropdown {
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+  .site-nav-dropdown-caret {
+    display: none;
+  }
+  .site-nav-submenu {
+    position: static;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    box-shadow: none;
+    border: none;
+    background: transparent;
+    padding: 2px 0 0;
+    min-width: 0;
+    align-items: center;
+  }
+  .site-nav-submenu-link {
+    font-size: 12.5px;
+    padding: 4px 8px;
   }
 }
 
