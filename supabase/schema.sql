@@ -108,3 +108,31 @@ left join lateral (
 -- alter table places enable row level security;
 -- alter table place_keywords enable row level security;
 -- alter table rank_checks enable row level security;
+
+-- ============================================================================
+-- "키워드 분석" 기능 — 키워드 하나로 노출되는 업체 목록을 순위/이름/카테고리/주소로
+-- 보여주는 기능(경쟁사 "애드로그"의 키워드 분석 화면 참고, 2026-09-30 추가)
+--
+-- 위의 place_keywords/rank_checks(특정 매장을 매일 추적)와는 성격이 달라서 —
+-- "키워드를 검색하면 그 자리에서 결과를 보여주는" 온디맨드 조회예요 — 별도 테이블로
+-- 뒀습니다. 요청 1건 = 결과 스냅샷 1행입니다.
+--
+-- 방문자수/블로그 수/저장수는 업체마다 상세페이지를 하나씩 열어야 확인 가능한 정보라
+-- (목록 페이지에는 없음) 이번 버전에서는 의도적으로 제외했습니다 — 필요해지면 나중에
+-- results jsonb 안에 필드를 추가하는 방식으로 확장할 수 있어요.
+create table if not exists keyword_place_lists (
+  id uuid primary key default gen_random_uuid(),
+  request_id text not null,          -- 이 값으로 어느 요청의 결과인지 정확히 매칭 (place_rank_check와 동일한 방식)
+  keyword text not null,
+  device text not null check (device in ('mobile', 'pc')),
+  max_rank integer not null,         -- 사용자가 선택한 조회 개수 (50/100/200)
+  status text not null check (status in ('ok', 'blocked', 'error')),
+  error_message text,
+  results jsonb,                     -- [{rank, placeId, name, category, address, isAd}, ...]
+  requested_at timestamptz not null default now()
+);
+
+create index if not exists idx_keyword_place_lists_request_id
+  on keyword_place_lists (request_id);
+
+-- alter table keyword_place_lists enable row level security; -- 다중 사용자로 확장 시

@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { href: "/seo", label: "SEO" },
   { href: "/geo", label: "GEO·AEO" },
   { href: "/keyword", label: "키워드 분석" },
+  { href: "/keyword-place-list", label: "키워드 순위표" },
   { href: "/place", label: "플레이스 순위" },
 ];
 
