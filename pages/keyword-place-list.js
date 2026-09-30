@@ -3,6 +3,24 @@ import { useState, useRef, useEffect } from "react";
 const MAX_WAIT_MS = 480000; // 8분 — 처음 실행은 npm install/Playwright 설치까지 새로 해서 오래 걸릴 수 있어요.
 const INTERVAL_MS = 6000;
 
+// placeId만 있으면 기기(모바일/PC) 상관없이 이 모바일 상세페이지 URL로 늘 접속됩니다
+// (모바일 전용 마크업에서 실제로 이 형식의 링크를 확인했어요 — PC로 검색한 결과의
+// placeId를 넣어도 같은 업체의 상세페이지가 그대로 열려요).
+function naverPlaceUrl(placeId) {
+  return `https://m.place.naver.com/place/${placeId}/home`;
+}
+
+// 새 탭이 아니라 작은 팝업창으로 띄웁니다. onClick 핸들러 안에서 바로 호출해야(사용자의
+// 클릭 동작과 동기적으로 실행) 브라우저 팝업 차단에 걸리지 않아요.
+function openPlacePopup(placeId) {
+  if (!placeId) return;
+  window.open(
+    naverPlaceUrl(placeId),
+    "naverPlacePopup",
+    "width=420,height=800,noopener,noreferrer,scrollbars=yes,resizable=yes"
+  );
+}
+
 export default function KeywordPlaceListPage() {
   const [keyword, setKeyword] = useState("");
   const [device, setDevice] = useState("mobile");
@@ -157,7 +175,31 @@ export default function KeywordPlaceListPage() {
                 {rows.map((r, i) => (
                   <tr key={`${r.placeId || "noid"}-${i}`} style={r.isAd ? { opacity: 0.55 } : undefined}>
                     <td>{r.isAd ? "광고" : r.rank}</td>
-                    <td>{r.name || "-"}</td>
+                    <td>
+                      {r.name || "-"}
+                      {r.placeId && (
+                        <>
+                          {" "}
+                          <button
+                            type="button"
+                            onClick={() => openPlacePopup(r.placeId)}
+                            title="클릭하면 네이버 플레이스 페이지가 작은 창으로 열려요"
+                            style={{
+                              background: "none",
+                              border: "none",
+                              padding: 0,
+                              marginLeft: 4,
+                              color: "var(--accent-blue, #2a6df4)",
+                              textDecoration: "underline",
+                              cursor: "pointer",
+                              fontSize: "0.85em",
+                            }}
+                          >
+                            ({r.placeId})
+                          </button>
+                        </>
+                      )}
+                    </td>
                     <td>{r.category || "-"}</td>
                     <td>{r.address || "-"}</td>
                   </tr>
