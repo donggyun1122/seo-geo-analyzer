@@ -24,6 +24,10 @@ on:
         description: "이 값을 채우면 해당 키워드 하나만, 비워두면 등록된 전체 키워드를 측정합니다 (Actions 탭에서 수동 실행할 때는 보통 비워두면 됩니다)."
         required: false
         type: string
+      request_id:
+        description: "웹 화면의 '지금 측정하기'가 자동으로 채우는 값이에요. Actions 탭에서 수동 실행할 때는 비워두면 됩니다."
+        required: false
+        type: string
 
 jobs:
   check-ranks:
@@ -33,20 +37,65 @@ jobs:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
 
+      # Node 22+ (WebSocket 기본 내장). @supabase/supabase-js가 내부적으로 realtime-js를
+      # 초기화하면서 전역 WebSocket 지원 여부를 확인하는데, Node 20에는 이게 없어서
+      # createClient() 호출 시점에 "Node.js 20 detected without native WebSocket support"
+      # 오류로 바로 죽어요(우리는 realtime 기능을 쓰지도 않는데도 이 체크를 통과해야 해요).
       - name: Node.js 설정
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
-      - name: 의존성 설치
+      # package-lock.json이 없어도 되도록 package.json 해시로 캐시 키를 만들어요.
+      # 캐시가 있으면 npm install / Playwright 브라우저 다운로드를 건너뛸 수 있어서
+      # "지금 측정하기" 버튼을 눌렀을 때 체감 대기시간이 크게 줄어들어요.
+      - name: 의존성 캐시 확인
+        id: npm-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package.json') }}
+
+      - name: 의존성 설치 (캐시 없을 때만)
+        if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install
 
-      - name: Playwright 브라우저 설치
+      - name: Playwright 브라우저 캐시 확인
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package.json') }}
+
+      - name: Playwright 브라우저 설치 (캐시 없을 때만 — 처음 실행이라 가장 오래 걸리는 단계예요)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      - name: Playwright 시스템 라이브러리만 설치 (브라우저는 캐시에서 재사용)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # Secrets가 하나라도 비어있으면 여기서 바로, 명확한 메시지로 실패시킵니다.
+      # (값 자체는 절대 로그에 출력하지 않고 "있다/없다"만 확인합니다.)
+      - name: 필수 환경변수(Secrets) 확인
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node -e "
+          for (const k of ['SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY']) {
+            if (!process.env[k] || !process.env[k].trim()) {
+              console.error('필수 환경변수가 없습니다: ' + k + ' — 저장소 Settings > Secrets and variables > Actions 에서 등록해주세요.');
+              process.exit(1);
+            }
+          }
+          console.log('필수 환경변수 확인 완료 (값 자체는 출력하지 않습니다).');
+          "
 
       - name: 순위 측정 실행
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           PLACE_KEYWORD_ID: ${{ github.event.inputs.place_keyword_id }}
+          REQUEST_ID: ${{ github.event.inputs.request_id }}
         run: node scripts/run-place-rank-checks.js
