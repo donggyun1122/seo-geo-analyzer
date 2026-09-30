@@ -37,6 +37,10 @@ jobs:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
 
+      # Node 22+ (WebSocket 기본 내장). @supabase/supabase-js가 내부적으로 realtime-js를
+      # 초기화하면서 전역 WebSocket 지원 여부를 확인하는데, Node 20에는 이게 없어서
+      # createClient() 호출 시점에 "Node.js 20 detected without native WebSocket support"
+      # 오류로 바로 죽어요(우리는 realtime 기능을 쓰지도 않는데도 이 체크를 통과해야 해요).
       - name: Node.js 설정
         uses: actions/setup-node@v4
         with:
