@@ -20,6 +20,11 @@ on:
         description: "조회할 키워드 (예: 호텔예약)"
         required: true
         type: string
+      device:
+        description: "pc 또는 mobile"
+        required: false
+        type: string
+        default: "pc"
 
 jobs:
   list-search-ads:
@@ -81,4 +86,5 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           REQUEST_ID: ${{ github.event.inputs.request_id }}
           KEYWORD: ${{ github.event.inputs.keyword }}
+          DEVICE: ${{ github.event.inputs.device }}
         run: node scripts/run-search-ad-list.js
