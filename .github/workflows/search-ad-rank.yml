@@ -1,0 +1,93 @@
+# "검색광고 분석 > 키워드 노출분석" 화면에서 조회하면 이 워크플로가 workflow_dispatch로 실행되어,
+# 우리 사이트 광고가 그 키워드의 네이버 파워링크에서 PC/모바일 각각 몇 위인지 확인해서
+# Supabase(search_ad_rank_checks 테이블)에 기록합니다(온디맨드 — 매일 자동 실행 아님).
+#
+# 사용 전 준비 — 다른 기능과 같은 Secrets/환경변수를 그대로 씁니다(SUPABASE_URL,
+# SUPABASE_SERVICE_ROLE_KEY / Vercel의 GITHUB_TOKEN, GITHUB_REPO).
+name: search-ad-rank
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: "웹 화면이 자동으로 채우는 요청 ID예요. Actions 탭에서 수동 실행할 때는 아무 값이나 넣어도 됩니다."
+        required: true
+        type: string
+      keyword:
+        description: "확인할 키워드 (예: 호텔예약)"
+        required: true
+        type: string
+      site_url:
+        description: "우리 사이트 URL (예: https://www.mysite.co.kr 또는 smartstore.naver.com/스토어명) — 업체명만으로 찾을 땐 비워도 돼요"
+        required: false
+        type: string
+        default: ""
+      advertiser_name:
+        description: "광고주명/업체명 (선택 — 광고에 표시되는 이름 그대로. 모바일 플레이스 랜딩 광고는 이걸로만 찾을 수 있어요)"
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  check-search-ad-rank:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: 의존성 캐시 확인
+        id: npm-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package.json') }}
+
+      - name: 의존성 설치 (캐시 없을 때만)
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: npm install
+
+      - name: Playwright 브라우저 캐시 확인
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package.json') }}
+
+      - name: Playwright 브라우저 설치 (캐시 없을 때만 — 처음 실행이라 가장 오래 걸리는 단계예요)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright 시스템 라이브러리만 설치 (브라우저는 캐시에서 재사용)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: 필수 환경변수(Secrets) 확인
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node -e "
+          for (const k of ['SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY']) {
+            if (!process.env[k] || !process.env[k].trim()) {
+              console.error('필수 환경변수가 없습니다: ' + k + ' — 저장소 Settings > Secrets and variables > Actions 에서 등록해주세요.');
+              process.exit(1);
+            }
+          }
+          console.log('필수 환경변수 확인 완료 (값 자체는 출력하지 않습니다).');
+          "
+
+      - name: 키워드 노출분석 실행
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          REQUEST_ID: ${{ github.event.inputs.request_id }}
+          KEYWORD: ${{ github.event.inputs.keyword }}
+          SITE_URL: ${{ github.event.inputs.site_url }}
+          ADVERTISER_NAME: ${{ github.event.inputs.advertiser_name }}
+        run: node scripts/run-search-ad-rank.js
