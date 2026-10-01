@@ -3,6 +3,7 @@
 // (keyword-place-list와 같은 온디맨드 방식)
 //
 // 필요한 환경변수: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, REQUEST_ID, KEYWORD
+// 선택 환경변수: DEVICE (pc | mobile, 기본 pc)
 
 const { getSupabaseAdmin } = require("../lib/supabaseAdmin");
 const { PlaywrightSearchAdProvider } = require("../lib/searchAd/PlaywrightSearchAdProvider");
@@ -10,25 +11,28 @@ const { PlaywrightSearchAdProvider } = require("../lib/searchAd/PlaywrightSearch
 async function main() {
   const requestId = (process.env.REQUEST_ID || "").trim();
   const keyword = (process.env.KEYWORD || "").trim();
+  const device = process.env.DEVICE === "mobile" ? "mobile" : "pc";
   if (!requestId || !keyword) {
     console.error("REQUEST_ID와 KEYWORD는 필수입니다.");
     process.exit(1);
   }
 
-  console.log(`검색광고 조회 중: "${keyword}"`);
+  console.log(`검색광고 조회 중: "${keyword}" (${device === "mobile" ? "모바일" : "PC"}, 전체 페이지)`);
   const provider = new PlaywrightSearchAdProvider({ headless: true });
   let result;
   try {
-    result = await provider.listAds({ keyword });
+    result = await provider.listAds({ keyword, device });
   } catch (err) {
-    result = { status: "error", items: [], errorMessage: err.message || String(err) };
+    result = { status: "error", items: [], pagesFetched: 0, errorMessage: err.message || String(err) };
   }
-  console.log(`  → ${result.status} (광고 ${result.items.length}개)${result.errorMessage ? ` — ${result.errorMessage}` : ""}`);
+  console.log(`  → ${result.status} (광고 ${result.items.length}개, ${result.pagesFetched || 0}페이지)${result.errorMessage ? ` — ${result.errorMessage}` : ""}`);
 
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.from("search_ad_lists").insert({
     request_id: requestId,
     keyword,
+    device,
+    pages_fetched: result.pagesFetched || 0,
     status: result.status,
     error_message: result.errorMessage,
     results: result.items,

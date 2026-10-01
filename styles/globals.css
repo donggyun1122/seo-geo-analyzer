@@ -2428,3 +2428,105 @@ a.ad-card-url:hover {
     font-size: 16px;
   }
 }
+
+/* 검색광고 분석 — PC/MO 선택, 기기 표시, 부분 결과 안내 */
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: #eef0f3;
+}
+
+.seg-btn {
+  min-width: 96px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.seg-btn.active {
+  background: #fff;
+  color: var(--accent-blue);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
+.seg-btn:disabled {
+  cursor: default;
+}
+
+.ad-device-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--accent-blue-tint);
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.ad-card-page {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f0f0f2;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.ad-notice {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fef3dd;
+  color: #8a5a00;
+  font-size: 13px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+@media (max-width: 560px) {
+  .seg {
+    display: flex;
+  }
+  .seg-btn {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* 검색광고 분석 — 모바일 이미지형 서브링크(이미지 + 문구) */
+.ad-card-imgsubs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+  max-width: 360px;
+}
+
+.ad-card-imgsub {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.ad-card-imgsub img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 10px;
+  background: #f0f0f2;
+  display: block;
+}

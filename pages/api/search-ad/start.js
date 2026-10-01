@@ -17,11 +17,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "POST 요청만 지원해요." });
   }
 
-  const { keyword } = req.body || {};
+  const { keyword, device } = req.body || {};
   if (!keyword || !String(keyword).trim()) {
     return res.status(400).json({ ok: false, error: "키워드를 입력해주세요." });
   }
   const kw = String(keyword).trim().slice(0, 100);
+  const dev = device === "mobile" ? "mobile" : "pc";
 
   const token = process.env.GITHUB_TOKEN;
   const repo = process.env.GITHUB_REPO;
@@ -45,7 +46,7 @@ export default async function handler(req, res) {
         "User-Agent": "seo-geo-analyzer-search-ad",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ ref, inputs: { request_id: requestId, keyword: kw } }),
+      body: JSON.stringify({ ref, inputs: { request_id: requestId, keyword: kw, device: dev } }),
     });
 
     if (ghRes.status === 204) {

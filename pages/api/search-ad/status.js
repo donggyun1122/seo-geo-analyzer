@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
   const { data, error } = await supabase
     .from("search_ad_lists")
-    .select("requested_at, keyword, status, error_message, results")
+    .select("requested_at, keyword, device, pages_fetched, status, error_message, results")
     .eq("request_id", requestId)
     .order("requested_at", { ascending: false })
     .limit(1);
@@ -37,6 +37,8 @@ export default async function handler(req, res) {
     done: true,
     result: {
       keyword: row.keyword,
+      device: row.device || "pc",
+      pagesFetched: row.pages_fetched,
       requestedAt: row.requested_at,
       status: row.status,
       errorMessage: row.error_message,

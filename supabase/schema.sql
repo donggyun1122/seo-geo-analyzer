@@ -245,13 +245,19 @@ create table if not exists search_ad_lists (
   id uuid primary key default gen_random_uuid(),
   request_id text not null,
   keyword text not null,
+  device text not null default 'pc' check (device in ('pc', 'mobile')),
+  pages_fetched integer,              -- 광고가 실제로 나온 마지막 페이지 번호(&pagingIndex 기준)
   status text not null check (status in ('ok', 'empty', 'blocked', 'error')),
   error_message text,
   results jsonb,                      -- [{rank, adId, advertiser, displayUrl, landingUrl, favicon, headline,
                                        --   subtitles[], description, imageUrl, extension{label,text},
-                                       --   sublinks[], badges[], adPeriod, promotion, adFormats[]}, ...]
+                                       --   sublinks[], badges[], adPeriod, promotion, adFormats[], page}, ...]
   requested_at timestamptz not null default now()
 );
+
+-- 이미 search_ad_lists 테이블을 만들어둔 경우(2026-10-01 첫 버전)에도 안전하게 컬럼이 추가되도록:
+alter table search_ad_lists add column if not exists device text not null default 'pc';
+alter table search_ad_lists add column if not exists pages_fetched integer;
 
 create index if not exists idx_search_ad_lists_request_id
   on search_ad_lists (request_id);
