@@ -1,38 +1,30 @@
-# 매일 한 번, 등록된 모든 쇼핑 키워드의 네이버쇼핑 노출 상품 목록을 조회해서 Supabase에
-# 스냅샷으로 기록합니다(place-rank-check.yml과 동일한 방식).
+# "검색광고 분석" 화면에서 키워드를 검색하면 이 워크플로가 workflow_dispatch로 실행되어,
+# 그 키워드로 노출되는 네이버 파워링크 광고(광고 업체, 문안, 이미지 등 소재)를 조회해서
+# Supabase(search_ad_lists 테이블)에 기록합니다. 매일 자동 실행이 아니라 검색할 때마다
+# 그 자리에서 실행되는 온디맨드 워크플로예요(keyword-place-list.yml과 같은 구조).
 #
-# 웹 화면의 "지금 분석하기" 버튼을 누르면 shopping_keyword_id 입력값과 함께 이 워크플로가
-# workflow_dispatch로 수동 실행돼서, 그 키워드 하나만 바로 분석합니다.
-# (shopping_keyword_id를 안 넘기면 = 매일 새벽 스케줄과 동일하게 등록된 전체 키워드를 분석합니다.)
-#
-# 사용 전 준비(place-rank-check.yml과 동일한 Secrets를 그대로 씁니다):
+# 사용 전 준비 — 다른 기능과 같은 Secrets/환경변수를 그대로 씁니다:
 #  1. 저장소 Settings → Secrets and variables → Actions 에 SUPABASE_URL,
-#     SUPABASE_SERVICE_ROLE_KEY가 이미 등록되어 있어야 합니다.
-#  2. Vercel에 GITHUB_TOKEN, GITHUB_REPO가 등록되어 있어야 "지금 분석하기" 버튼이 동작합니다.
-name: shopping-keyword-analysis
+#     SUPABASE_SERVICE_ROLE_KEY가 등록되어 있어야 합니다(이미 있을 거예요).
+#  2. Vercel에 GITHUB_TOKEN, GITHUB_REPO가 등록되어 있어야 합니다(이미 있을 거예요).
+name: search-ad-list
 
 on:
-  # ⏸ 2026-10-01 — 네이버 쇼핑 분석 기능을 미노출 처리하면서 매일 자동 실행도 꺼뒀어요
-  # (네이버 쇼핑 검색이 자동화 접근을 차단하고 있어서, 켜두면 매일 아침 실패 기록만 쌓여요).
-  # 다시 켜려면 lib/featureFlags.js의 SHOPPING_ENABLED를 true로 바꾸고, 아래 세 줄의 # 를 지우세요.
-  # schedule:
-  #   # 매일 22:00 UTC = 한국시간(KST) 오전 7시
-  #   - cron: "0 22 * * *"
   workflow_dispatch:
     inputs:
-      shopping_keyword_id:
-        description: "이 값을 채우면 해당 키워드 하나만, 비워두면 등록된 전체 키워드를 분석합니다."
-        required: false
-        type: string
       request_id:
-        description: "웹 화면의 '지금 분석하기'가 자동으로 채우는 값이에요. 수동 실행할 때는 비워두면 됩니다."
-        required: false
+        description: "웹 화면이 자동으로 채우는 요청 ID예요. Actions 탭에서 수동 실행할 때는 아무 값이나 넣어도 됩니다."
+        required: true
+        type: string
+      keyword:
+        description: "조회할 키워드 (예: 호텔예약)"
+        required: true
         type: string
 
 jobs:
-  analyze-shopping-keywords:
+  list-search-ads:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
@@ -60,7 +52,7 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package.json') }}
 
-      - name: Playwright 브라우저 설치 (캐시 없을 때만)
+      - name: Playwright 브라우저 설치 (캐시 없을 때만 — 처음 실행이라 가장 오래 걸리는 단계예요)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
@@ -83,10 +75,10 @@ jobs:
           console.log('필수 환경변수 확인 완료 (값 자체는 출력하지 않습니다).');
           "
 
-      - name: 쇼핑 키워드 분석 실행
+      - name: 검색광고 조회 실행
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SHOPPING_KEYWORD_ID: ${{ github.event.inputs.shopping_keyword_id }}
           REQUEST_ID: ${{ github.event.inputs.request_id }}
-        run: node scripts/run-shopping-keyword-analysis.js
+          KEYWORD: ${{ github.event.inputs.keyword }}
+        run: node scripts/run-search-ad-list.js
