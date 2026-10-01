@@ -258,6 +258,10 @@ create table if not exists search_ad_lists (
 -- 이미 search_ad_lists 테이블을 만들어둔 경우(2026-10-01 첫 버전)에도 안전하게 컬럼이 추가되도록:
 alter table search_ad_lists add column if not exists device text not null default 'pc';
 alter table search_ad_lists add column if not exists pages_fetched integer;
+-- 순위 번호 기준("naver" = 네이버가 광고에 붙인 순위 번호 / "sequence" = 화면에 나온 순서)과,
+-- 같은 광고주가 다른 문안으로 또 나와서 하나로 합친 횟수 (2026-10-01 중복/순위 보정)
+alter table search_ad_lists add column if not exists rank_source text;
+alter table search_ad_lists add column if not exists merged_duplicates integer;
 
 create index if not exists idx_search_ad_lists_request_id
   on search_ad_lists (request_id);
@@ -266,3 +270,34 @@ create index if not exists idx_search_ad_lists_keyword_time
   on search_ad_lists (keyword, requested_at desc);
 
 -- alter table search_ad_lists enable row level security; -- 다중 사용자로 확장 시
+
+-- ============================================================================
+-- "검색광고 분석 > 키워드 노출분석" (2026-10-01 추가)
+--
+-- 우리 사이트 URL + 키워드를 입력하면, 우리 파워링크 광고가 PC/모바일 각각 몇 위에 노출되는지
+-- 확인합니다. 요청 1건 = 결과 1행(온디맨드). results에 기기별 결과가 들어있어요:
+--   { pc: { status: found|not_found|empty|blocked|error, rank, page, rankSource, pagesFetched,
+--           scannedAds, ad{...찾은 광고 소재}, errorMessage, note },
+--     mobile: { ...같은 형식 } }
+create table if not exists search_ad_rank_checks (
+  id uuid primary key default gen_random_uuid(),
+  request_id text not null,
+  keyword text not null,
+  site_url text not null,
+  status text not null check (status in ('ok', 'error')),
+  error_message text,
+  results jsonb,
+  requested_at timestamptz not null default now()
+);
+
+-- (2026-10-01) 광고주명으로도 찾을 수 있게 — 모바일 플레이스 랜딩 광고는 주소에 업체 ID가 없어서
+-- 광고주명으로만 우리 광고를 특정할 수 있어요.
+alter table search_ad_rank_checks add column if not exists advertiser_name text;
+
+create index if not exists idx_search_ad_rank_checks_request_id
+  on search_ad_rank_checks (request_id);
+
+create index if not exists idx_search_ad_rank_checks_site_kw_time
+  on search_ad_rank_checks (site_url, keyword, requested_at desc);
+
+-- alter table search_ad_rank_checks enable row level security; -- 다중 사용자로 확장 시

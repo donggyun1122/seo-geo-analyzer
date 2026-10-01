@@ -18,7 +18,13 @@ const NAV_ITEMS = [
       { href: "/place", label: "플레이스 순위" },
     ],
   },
-  { href: "/search-ad", label: "검색광고 분석" },
+  {
+    label: "검색광고 분석",
+    children: [
+      { href: "/search-ad", label: "노출 광고 현황" },
+      { href: "/search-ad-rank", label: "키워드 노출분석" },
+    ],
+  },
   ...(SHOPPING_ENABLED
     ? [
         {

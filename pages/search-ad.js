@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
+import AdCard, { hasImage, pageLabelOf } from "../components/AdCard";
 
+// "검색광고 분석 > 노출 광고 현황" 화면.
 // 키워드를 검색하면 그 키워드로 노출되는 네이버 파워링크 광고(광고 업체, 광고 문안, 이미지 등
 // 소재)를 정리해서 보여주는 화면이에요. PC/모바일 검색을 고를 수 있고, 광고 더보기 페이지를
 // 끝까지(&pagingIndex=2, 3 ...) 넘겨서 전체 광고를 모아요. 실제 조회는 GitHub Actions에서 실행되고(1~3분),
@@ -16,14 +18,14 @@ function csvEscape(v) {
 }
 
 function downloadCsv(keyword, device, ads) {
-  const header = ["순위", "기기", "페이지", "광고주", "표시 URL", "랜딩 URL", "제목", "서브타이틀", "설명", "확장소재", "서브링크", "이미지 서브링크", "배지", "광고집행기간", "이미지 URL", "광고 ID"];
+  const header = ["순위", "기기", "노출 위치", "광고주", "표시 URL", "랜딩 URL", "제목", "서브타이틀", "설명", "확장소재", "서브링크", "이미지 서브링크", "플레이스 정보", "플레이스 사진", "배지", "광고집행기간", "이미지 URL", "광고 ID"];
   const lines = [header.map(csvEscape).join(",")];
   ads.forEach((a) => {
     lines.push(
       [
         a.rank,
         DEVICE_LABEL[device] || device,
-        a.page,
+        pageLabelOf(a),
         a.advertiser,
         a.displayUrl,
         a.landingUrl,
@@ -33,6 +35,8 @@ function downloadCsv(keyword, device, ads) {
         a.extension ? [a.extension.label, a.extension.text].filter(Boolean).join(" · ") : "",
         (a.sublinks || []).join(" / "),
         (a.imageSublinks || []).map((x) => [x.text, x.imageUrl].filter(Boolean).join(" ")).join(" / "),
+        a.placeInfo ? [a.placeInfo.price, ...(a.placeInfo.items || [])].filter(Boolean).join(" · ") : "",
+        (a.placeImages || []).join(" "),
         (a.badges || []).join(" / "),
         a.adPeriod,
         a.imageUrl,
@@ -52,117 +56,6 @@ function downloadCsv(keyword, device, ads) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
-}
-
-// 이미지 소재가 있는 광고: PC 단일 썸네일(imageUrl) 또는 모바일 이미지형 서브링크(imageSublinks)
-function hasImage(ad) {
-  return !!ad.imageUrl || (Array.isArray(ad.imageSublinks) && ad.imageSublinks.length > 0);
-}
-
-function hostOf(url) {
-  try {
-    return new URL(url).host;
-  } catch (e) {
-    return url;
-  }
-}
-
-function AdCard({ ad }) {
-  return (
-    <article className="ad-card">
-      <div className="ad-card-rank" aria-label={`${ad.rank}위`}>
-        {ad.rank}
-      </div>
-
-      <div className="ad-card-body">
-        <div className="ad-card-advertiser">
-          {ad.favicon && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="ad-card-favicon" src={ad.favicon} alt="" width={16} height={16} referrerPolicy="no-referrer" loading="lazy" />
-          )}
-          <span className="ad-card-advertiser-name">{ad.advertiser || "(광고주명 없음)"}</span>
-          {ad.landingUrl ? (
-            <a className="ad-card-url" href={ad.landingUrl} target="_blank" rel="noopener noreferrer" title="광고 추적 링크가 아니라 실제 사이트 주소로 열려요">
-              {ad.displayUrl || hostOf(ad.landingUrl)}
-            </a>
-          ) : (
-            ad.displayUrl && <span className="ad-card-url">{ad.displayUrl}</span>
-          )}
-        </div>
-
-        <h3 className="ad-card-headline">{ad.headline || "-"}</h3>
-        {ad.subtitles && ad.subtitles.length > 0 && (
-          <p className="ad-card-subtitles">
-            {ad.subtitles.map((s, i) => (
-              <span key={i} className="ad-card-subtitle">
-                {s}
-              </span>
-            ))}
-          </p>
-        )}
-        {ad.description && <p className="ad-card-desc">{ad.description}</p>}
-
-        {ad.extension && (
-          <div className="ad-card-ext">
-            {ad.extension.label && <span className="ad-card-ext-label">{ad.extension.label}</span>}
-            <span>{ad.extension.text}</span>
-          </div>
-        )}
-
-        {ad.imageSublinks && ad.imageSublinks.length > 0 && (
-          <div className="ad-card-imgsubs">
-            {ad.imageSublinks.map((x, i) =>
-              x.imageUrl ? (
-                <a key={i} className="ad-card-imgsub" href={x.imageUrl} target="_blank" rel="noopener noreferrer" title="이미지 소재 크게 보기">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={x.imageUrl} alt={x.text || ""} referrerPolicy="no-referrer" loading="lazy" />
-                  {x.text && <span>{x.text}</span>}
-                </a>
-              ) : (
-                <div key={i} className="ad-card-imgsub">
-                  {x.text && <span>{x.text}</span>}
-                </div>
-              )
-            )}
-          </div>
-        )}
-
-        {ad.sublinks && ad.sublinks.length > 0 && (
-          <div className="ad-card-chips">
-            {ad.sublinks.map((s, i) => (
-              <span key={i} className="ad-card-chip">
-                {s}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="ad-card-meta">
-          {ad.page && <span className="ad-card-page">{ad.page}페이지</span>}
-          {ad.adPeriod && (
-            <span>
-              광고집행기간 <strong>{ad.adPeriod}</strong>
-            </span>
-          )}
-          {(ad.badges || []).map((b, i) => (
-            <span key={i} className="ad-card-badge">
-              {b}
-            </span>
-          ))}
-          {ad.imageUrl && <span className="ad-card-badge ad-card-badge-soft">이미지 소재</span>}
-          {ad.imageSublinks && ad.imageSublinks.length > 0 && <span className="ad-card-badge ad-card-badge-soft">이미지형 서브링크</span>}
-          {ad.subtitles && ad.subtitles.length > 0 && <span className="ad-card-badge ad-card-badge-soft">서브타이틀</span>}
-        </div>
-      </div>
-
-      {ad.imageUrl && (
-        <a className="ad-card-thumb" href={ad.imageUrl} target="_blank" rel="noopener noreferrer" title="이미지 소재 크게 보기">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ad.imageUrl} alt={`${ad.advertiser || ""} 광고 이미지`} referrerPolicy="no-referrer" loading="lazy" />
-        </a>
-      )}
-    </article>
-  );
 }
 
 export default function SearchAdPage() {
@@ -204,7 +97,14 @@ export default function SearchAdPage() {
         if (data.ok && data.done) {
           stopTimers();
           const r = data.result || {};
-          setResultMeta({ keyword: r.keyword, requestedAt: r.requestedAt, device: r.device || "pc", pagesFetched: r.pagesFetched });
+          setResultMeta({
+            keyword: r.keyword,
+            requestedAt: r.requestedAt,
+            device: r.device || "pc",
+            pagesFetched: r.pagesFetched,
+            rankSource: r.rankSource,
+            mergedDuplicates: r.mergedDuplicates || 0,
+          });
           if (r.status === "ok") {
             setAds(r.results || []);
             setPhase("done");
@@ -270,7 +170,7 @@ export default function SearchAdPage() {
   return (
     <div className="container">
       <div className="header">
-        <h1>검색광고 분석</h1>
+        <h1>노출 광고 현황</h1>
         <p>키워드를 검색하면 네이버 파워링크에 노출되는 광고 업체와 광고 문안, 이미지 등 소재를 한 번에 정리해드려요.</p>
       </div>
 
@@ -297,8 +197,10 @@ export default function SearchAdPage() {
           </button>
         </form>
         <p className="search-hint">
-          {device === "pc" ? "PC" : "모바일"} 검색의 파워링크 광고 더보기 페이지를 마지막 페이지까지 넘겨서 전체 광고를 모아요. 보통
-          1~3분 걸리고, 광고가 많은 키워드는 조금 더 걸려요.
+          {device === "pc"
+            ? "PC 검색의 파워링크 광고 더보기 페이지를 마지막 페이지까지 넘겨서 전체 광고를 모아요."
+            : "모바일 검색의 파워링크 광고를 목록 아래 '더보기'를 끝까지 눌러가며 전체 광고를 모아요."}{" "}
+          보통 1~3분 걸리고, 광고가 많은 키워드는 조금 더 걸려요.
         </p>
         {busy && (
           <div className="ad-progress" role="status">
@@ -348,7 +250,25 @@ export default function SearchAdPage() {
             {resultMeta && resultMeta.requestedAt && (
               <p className="search-hint">
                 조회 시각: {new Date(resultMeta.requestedAt).toLocaleString("ko-KR")}
-                {resultMeta.pagesFetched ? ` · 광고 더보기 ${resultMeta.pagesFetched}페이지까지 전체 확인` : ""}
+                {resultMeta.pagesFetched
+                  ? resultMeta.device === "mobile"
+                    ? resultMeta.pagesFetched > 1
+                      ? ` · 더보기 ${resultMeta.pagesFetched - 1}번까지 눌러서 전체 확인`
+                      : " · 더보기 없이 첫 화면에서 전체 확인"
+                    : ` · 광고 더보기 ${resultMeta.pagesFetched}페이지까지 전체 확인`
+                  : ""}
+              </p>
+            )}
+            {resultMeta && (resultMeta.rankSource || resultMeta.mergedDuplicates > 0) && (
+              <p className="search-hint">
+                {resultMeta.rankSource === "naver"
+                  ? "순위는 네이버가 각 광고에 붙여둔 순위 번호 기준이에요."
+                  : resultMeta.rankSource === "sequence"
+                  ? "순위는 화면에 나온 순서 기준이에요."
+                  : ""}
+                {resultMeta.mergedDuplicates > 0
+                  ? ` 페이지를 넘기는 사이 같은 광고주가 다른 문안으로 또 나온 ${resultMeta.mergedDuplicates}건은 처음 나온 자리 하나로 합쳤어요(카드의 "다른 문안"에서 볼 수 있어요).`
+                  : ""}
               </p>
             )}
             {notice && <div className="ad-notice">{notice}</div>}
@@ -371,8 +291,9 @@ export default function SearchAdPage() {
           </div>
 
           <p className="footer-note">
-            순위는 광고 더보기 페이지에 노출된 순서(1페이지부터 이어서)예요. 광고 링크(클릭하면 광고주에게 비용이 청구되는 추적 링크)는 쓰지
-            않고, 광고의 실제 사이트 주소로만 연결해요. 실시간 입찰 결과라 조회할 때마다 순서가 달라질 수 있어요.
+            같은 광고주(같은 사이트)는 한 번만 보여드리고, 처음 나온 자리를 그 광고주의 순위로 봐요. 광고 링크(클릭하면 광고주에게 비용이
+            청구되는 추적 링크)는 쓰지 않고, 광고의 실제 사이트 주소로만 연결해요. 네이버 광고는 실시간 입찰 결과라 조회할 때마다, 그리고
+            보는 위치·시간에 따라 순서가 조금씩 달라질 수 있어요.
           </p>
         </>
       )}

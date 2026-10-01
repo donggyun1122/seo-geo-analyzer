@@ -25,7 +25,8 @@ async function main() {
   } catch (err) {
     result = { status: "error", items: [], pagesFetched: 0, errorMessage: err.message || String(err) };
   }
-  console.log(`  → ${result.status} (광고 ${result.items.length}개, ${result.pagesFetched || 0}페이지)${result.errorMessage ? ` — ${result.errorMessage}` : ""}`);
+  if (result.moreButton) console.log(`  (모바일 더보기 버튼: ${result.moreButton})`);
+  console.log(`  → ${result.status} (광고 ${result.items.length}개, ${result.pagesFetched || 0}${device === "mobile" ? "회 불러옴" : "페이지"})${result.errorMessage ? ` — ${result.errorMessage}` : ""}`);
 
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.from("search_ad_lists").insert({
@@ -33,6 +34,8 @@ async function main() {
     keyword,
     device,
     pages_fetched: result.pagesFetched || 0,
+    rank_source: result.rankSource || null,
+    merged_duplicates: result.mergedDuplicates || 0,
     status: result.status,
     error_message: result.errorMessage,
     results: result.items,

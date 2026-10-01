@@ -1,4 +1,4 @@
-// "검색광고 분석" 요청 후 화면이 폴링하는 엔드포인트 — requestId로 그 요청의 결과만 정확히 찾습니다.
+// "키워드 노출분석" 요청 후 화면이 폴링하는 엔드포인트 — requestId로 그 요청의 결과만 정확히 찾습니다.
 
 const { getSupabaseAdmin } = require("../../../lib/supabaseAdmin");
 
@@ -7,11 +7,8 @@ export default async function handler(req, res) {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ ok: false, error: "GET 요청만 지원해요." });
   }
-
   const { requestId } = req.query;
-  if (!requestId) {
-    return res.status(400).json({ ok: false, error: "requestId가 필요해요." });
-  }
+  if (!requestId) return res.status(400).json({ ok: false, error: "requestId가 필요해요." });
 
   let supabase;
   try {
@@ -21,12 +18,11 @@ export default async function handler(req, res) {
   }
 
   const { data, error } = await supabase
-    .from("search_ad_lists")
-    .select("requested_at, keyword, device, pages_fetched, rank_source, merged_duplicates, status, error_message, results")
+    .from("search_ad_rank_checks")
+    .select("requested_at, keyword, site_url, advertiser_name, status, error_message, results")
     .eq("request_id", requestId)
     .order("requested_at", { ascending: false })
     .limit(1);
-
   if (error) return res.status(500).json({ ok: false, error: error.message });
 
   const row = (data || [])[0];
@@ -37,14 +33,12 @@ export default async function handler(req, res) {
     done: true,
     result: {
       keyword: row.keyword,
-      device: row.device || "pc",
-      pagesFetched: row.pages_fetched,
-      rankSource: row.rank_source || null,
-      mergedDuplicates: row.merged_duplicates || 0,
+      siteUrl: row.site_url,
+      advertiserName: row.advertiser_name || null,
       requestedAt: row.requested_at,
       status: row.status,
       errorMessage: row.error_message,
-      results: row.results || [],
+      results: row.results || {},
     },
   });
 }
