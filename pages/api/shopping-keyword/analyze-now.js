@@ -1,3 +1,4 @@
+const { SHOPPING_ENABLED } = require("../../../lib/featureFlags");
 // "지금 분석하기" 버튼 — check-now.js와 동일한 구조(workflow_dispatch + request_id 폴링).
 const crypto = require("crypto");
 const { getSupabaseAdmin } = require("../../../lib/supabaseAdmin");
@@ -5,6 +6,9 @@ const { getSupabaseAdmin } = require("../../../lib/supabaseAdmin");
 const WORKFLOW_FILE = "shopping-keyword-analysis.yml";
 
 export default async function handler(req, res) {
+  if (!SHOPPING_ENABLED) {
+    return res.status(404).json({ ok: false, error: "네이버 쇼핑 분석 기능은 현재 비활성화되어 있어요." });
+  }
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ ok: false, error: "POST 요청만 지원해요." });

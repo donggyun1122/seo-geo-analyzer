@@ -1,3 +1,4 @@
+const { SHOPPING_ENABLED } = require("../../../lib/featureFlags");
 // 특정 쇼핑 키워드의 "최신 분석 결과"를, 바로 이전 스냅샷과 상품 ID 기준으로 비교해서
 // 순위/가격 변동(▲▼)까지 계산해 반환합니다. 상품이 여러 개인 배열(jsonb)이라 SQL 뷰 대신
 // 여기서 매칭합니다(파일 schema.sql의 shopping_keyword_latest 뷰 주석 참고).
@@ -12,6 +13,9 @@ function bestId(item) {
 }
 
 export default async function handler(req, res) {
+  if (!SHOPPING_ENABLED) {
+    return res.status(404).json({ ok: false, error: "네이버 쇼핑 분석 기능은 현재 비활성화되어 있어요." });
+  }
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ ok: false, error: "GET 요청만 지원해요." });

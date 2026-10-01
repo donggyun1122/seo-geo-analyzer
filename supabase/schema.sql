@@ -234,3 +234,29 @@ create index if not exists idx_shopping_rank_checks_request_id
 -- alter table shopping_keywords enable row level security; -- 다중 사용자로 확장 시
 -- alter table shopping_keyword_snapshots enable row level security;
 -- alter table shopping_rank_checks enable row level security;
+
+-- ============================================================================
+-- "검색광고 분석" 기능 (2026-10-01 추가)
+--
+-- 키워드를 검색하면 그 키워드로 노출되는 네이버 파워링크 광고(광고 업체, 광고 문안, 이미지,
+-- 확장소재, 서브링크, 광고집행기간 등)를 정리해서 보여줍니다. 등록 없이 검색할 때마다 1회
+-- 조회하는 온디맨드 방식이에요(keyword_place_lists와 같은 구조 — 요청 1건 = 결과 1행).
+create table if not exists search_ad_lists (
+  id uuid primary key default gen_random_uuid(),
+  request_id text not null,
+  keyword text not null,
+  status text not null check (status in ('ok', 'empty', 'blocked', 'error')),
+  error_message text,
+  results jsonb,                      -- [{rank, adId, advertiser, displayUrl, landingUrl, favicon, headline,
+                                       --   subtitles[], description, imageUrl, extension{label,text},
+                                       --   sublinks[], badges[], adPeriod, promotion, adFormats[]}, ...]
+  requested_at timestamptz not null default now()
+);
+
+create index if not exists idx_search_ad_lists_request_id
+  on search_ad_lists (request_id);
+
+create index if not exists idx_search_ad_lists_keyword_time
+  on search_ad_lists (keyword, requested_at desc);
+
+-- alter table search_ad_lists enable row level security; -- 다중 사용자로 확장 시

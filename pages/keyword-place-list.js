@@ -162,6 +162,8 @@ export default function KeywordPlaceListPage() {
           {rows.length === 0 ? (
             <p className="brand-empty">결과를 찾지 못했어요.</p>
           ) : (
+            <div className="table-scroll">
+            <p className="table-scroll-hint">← 표를 좌우로 밀어서 전체 내용을 볼 수 있어요</p>
             <table className="place-table">
               <thead>
                 <tr>
@@ -206,6 +208,7 @@ export default function KeywordPlaceListPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}

@@ -867,9 +867,10 @@ svg {
 .site-nav {
   position: sticky;
   top: 0;
-  z-index: 20;
-  background: rgba(255, 255, 255, 0.85);
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
   border-bottom: 1px solid var(--border-hairline);
 }
 
@@ -926,9 +927,10 @@ svg {
   border-bottom-color: var(--accent-blue);
 }
 
-/* "네이버 쇼핑 분석" 처럼 하위 메뉴가 있는 항목 — 마우스오버 시 서브메뉴가 나타납니다.
-   padding-bottom/margin-bottom로 트리거와 서브메뉴 사이에 보이지 않는 여백을 만들어서,
-   마우스가 그 사이를 지나갈 때 hover가 끊기지 않도록 했어요. */
+/* ---- 데스크톱 드롭다운 (하위 메뉴가 있는 그룹) ----
+   마우스를 올리면 열리고(hover), 클릭해도 열려요(.open — NavBar.js가 붙여줌).
+   padding-bottom/margin-bottom은 트리거와 서브메뉴 사이에 보이지 않는 다리를 만들어서,
+   마우스가 그 틈을 지나갈 때 메뉴가 닫히지 않도록 하는 장치예요. */
 .site-nav-dropdown {
   position: relative;
   display: inline-flex;
@@ -937,7 +939,14 @@ svg {
 }
 
 .site-nav-dropdown-trigger {
-  cursor: default;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -945,11 +954,12 @@ svg {
 
 .site-nav-dropdown-caret {
   font-size: 10px;
-  color: var(--text-secondary);
-  transition: transform 0.15s ease;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
 }
 
-.site-nav-dropdown:hover .site-nav-dropdown-caret {
+.site-nav-dropdown:hover .site-nav-dropdown-caret,
+.site-nav-dropdown.open .site-nav-dropdown-caret {
   transform: rotate(180deg);
 }
 
@@ -960,21 +970,22 @@ svg {
   margin-top: 4px;
   background: #fff;
   border: 1px solid var(--border-hairline);
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
   padding: 6px;
   display: flex;
   flex-direction: column;
-  min-width: 190px;
+  min-width: 180px;
   opacity: 0;
   visibility: hidden;
   transform: translateX(-50%) translateY(-4px);
   transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
-  z-index: 30;
+  z-index: 50;
 }
 
 .site-nav-dropdown:hover .site-nav-submenu,
-.site-nav-dropdown:focus-within .site-nav-submenu {
+.site-nav-dropdown:focus-within .site-nav-submenu,
+.site-nav-dropdown.open .site-nav-submenu {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
@@ -982,8 +993,8 @@ svg {
 
 .site-nav-submenu-link {
   display: block;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 9px 12px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-secondary);
@@ -1001,51 +1012,170 @@ svg {
   font-weight: 600;
 }
 
-@media (max-width: 640px) {
+/* ---- 모바일 메뉴 (☰ 버튼 + 펼쳐지는 패널) — 데스크톱에서는 숨김 ---- */
+.mnav-toggle,
+.mnav-panel {
+  display: none;
+}
+
+/* 메뉴 항목이 많아 데스크톱 한 줄에 안 들어가는 중간 폭에서는 간격만 줄여요 */
+@media (max-width: 1024px) {
+  .site-nav-links {
+    gap: 18px;
+  }
+  .site-nav-link,
+  .site-nav-dropdown-trigger {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
   .site-nav-inner {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    padding: 12px 16px;
-    row-gap: 8px;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 12px 10px 16px;
+    min-height: 56px;
   }
   .site-logo {
-    justify-self: center;
-    font-size: 15px;
+    font-size: 16px;
   }
+  .site-nav-links,
   .site-nav-spacer {
     display: none;
   }
-  .site-nav-links {
-    gap: 14px 18px;
-  }
-  .site-nav-link {
-    font-size: 13px;
-  }
-  /* 모바일은 마우스오버가 없어서, 드롭다운 대신 하위 메뉴를 항상 펼쳐서 보여줍니다. */
-  .site-nav-dropdown {
+
+  .mnav-toggle {
+    display: inline-flex;
     flex-direction: column;
+    justify-content: center;
     align-items: center;
-    padding-bottom: 0;
-    margin-bottom: 0;
-  }
-  .site-nav-dropdown-caret {
-    display: none;
-  }
-  .site-nav-submenu {
-    position: static;
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-    box-shadow: none;
+    gap: 5px;
+    width: 44px;
+    height: 44px;
     border: none;
+    border-radius: 12px;
     background: transparent;
-    padding: 2px 0 0;
-    min-width: 0;
-    align-items: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
-  .site-nav-submenu-link {
-    font-size: 12.5px;
-    padding: 4px 8px;
+  .mnav-toggle:active {
+    background: rgba(15, 23, 42, 0.06);
+  }
+  .mnav-toggle-bar {
+    display: block;
+    width: 20px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--text-primary);
+    transition: transform 0.22s ease, opacity 0.18s ease;
+  }
+  /* 열리면 ☰ → ✕ 로 바뀌어요 */
+  .mnav-toggle.open .mnav-toggle-bar:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .mnav-toggle.open .mnav-toggle-bar:nth-child(2) {
+    opacity: 0;
+  }
+  .mnav-toggle.open .mnav-toggle-bar:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+  .mnav-panel {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    background: #fff;
+    border-bottom: 1px solid var(--border-hairline);
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+    max-height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    transition: max-height 0.28s ease, visibility 0.28s ease;
+  }
+  .mnav-panel.open {
+    max-height: calc(100vh - 56px);
+    overflow-y: auto;
+    visibility: visible;
+  }
+
+  .mnav-list,
+  .mnav-sublist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .mnav-list {
+    padding: 6px 8px 12px;
+  }
+
+  .mnav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 50px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 12px;
+    background: none;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mnav-item:active {
+    background: rgba(15, 23, 42, 0.05);
+  }
+  .mnav-item.active {
+    color: var(--accent-blue);
+  }
+
+  .mnav-chevron {
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    transform: rotate(45deg) translate(-2px, -2px);
+    transition: transform 0.22s ease;
+  }
+  .mnav-group.expanded .mnav-chevron {
+    transform: rotate(-135deg) translate(-2px, -2px);
+  }
+
+  .mnav-sublist {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+  }
+  .mnav-group.expanded .mnav-sublist {
+    max-height: 240px;
+  }
+  .mnav-subitem {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    margin: 0 0 2px 14px;
+    padding: 0 14px;
+    border-left: 2px solid var(--border-hairline);
+    border-radius: 0 10px 10px 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+  .mnav-subitem:active {
+    background: rgba(15, 23, 42, 0.05);
+  }
+  .mnav-subitem.active {
+    color: var(--accent-blue);
+    border-left-color: var(--accent-blue);
+    font-weight: 600;
   }
 }
 
@@ -1857,6 +1987,53 @@ svg {
   border-bottom: 1px solid var(--border-hairline);
 }
 
+/* 넓은 표는 화면 밖으로 잘리지 않고, 표 영역 안에서 좌우로 밀어서 볼 수 있게 합니다.
+   (html/body에 overflow-x: hidden이 걸려 있어서, 감싸는 스크롤 영역이 없으면 표의 오른쪽이
+   그냥 잘려버리고 옆으로 이동도 안 됐어요 — 2026-10-01 모바일 최적화) */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.table-scroll-hint {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .table-scroll .place-table {
+    min-width: 600px;
+  }
+  .place-table th,
+  .place-table td {
+    white-space: nowrap;
+  }
+  /* 펼침 상세/안내 메시지 행은 줄바꿈 허용 */
+  .place-table td[colspan] {
+    white-space: normal;
+  }
+  .table-scroll-hint {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0 0 6px;
+  }
+}
+
+@media (max-width: 560px) {
+  /* 입력 폼은 한 줄씩 꽉 차게 쌓아서 잘리지 않도록 */
+  .place-form > input[type="text"],
+  .place-form > select,
+  .place-form > button {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+  .place-form button {
+    padding: 12px 18px;
+  }
+}
+
 .place-table-row {
   cursor: pointer;
   transition: background 0.15s ease;
@@ -1962,4 +2139,292 @@ svg {
   border-radius: 6px;
   padding: 6px 10px;
   margin: 0;
+}
+
+/* ---- 검색광고 분석 페이지 (2026-10-01) ---- */
+.ad-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--accent-blue-tint);
+  color: var(--accent-blue);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ad-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  animation: ad-pulse 1.2s ease-in-out infinite;
+}
+
+.ad-progress-sub {
+  flex-basis: 100%;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+@keyframes ad-pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+.ad-empty-box {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f5f6f8;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.ad-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+
+.ad-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f7f8fa;
+}
+
+.ad-summary-num {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ad-summary-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ad-filter {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.ad-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.ad-card {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 132px;
+  gap: 14px;
+  align-items: start;
+  background: var(--bg-card);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  padding: 18px;
+}
+
+.ad-card:not(:has(.ad-card-thumb)) {
+  grid-template-columns: 36px minmax(0, 1fr);
+}
+
+.ad-card-rank {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-blue-tint);
+  color: var(--accent-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ad-card-body {
+  min-width: 0;
+}
+
+.ad-card-advertiser {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 13px;
+}
+
+.ad-card-favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.ad-card-advertiser-name {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ad-card-url {
+  color: #0c8a3a;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+a.ad-card-url:hover {
+  text-decoration: underline;
+}
+
+.ad-card-headline {
+  margin: 6px 0 2px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a47c2;
+  line-height: 1.4;
+}
+
+.ad-card-subtitles {
+  margin: 2px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 0;
+}
+
+.ad-card-subtitle {
+  font-size: 14px;
+  color: #3557c7;
+}
+
+.ad-card-subtitle + .ad-card-subtitle::before {
+  content: "·";
+  margin: 0 6px;
+  color: var(--text-muted);
+}
+
+.ad-card-desc {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.ad-card-ext {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #fff3f2;
+  color: #b4231b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ad-card-ext-label {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #e5392e;
+  color: #fff;
+  font-size: 11px;
+}
+
+.ad-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.ad-card-chip {
+  padding: 4px 10px;
+  border-radius: 980px;
+  border: 1px solid var(--border-hairline);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  background: #fff;
+}
+
+.ad-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ad-card-meta strong {
+  color: var(--text-secondary);
+}
+
+.ad-card-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #e8f7ec;
+  color: #0c8a3a;
+  font-weight: 600;
+}
+
+.ad-card-badge-soft {
+  background: #f0f0f2;
+  color: var(--text-secondary);
+}
+
+.ad-card-thumb {
+  display: block;
+  width: 132px;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f0f0f2;
+}
+
+.ad-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 560px) {
+  .ad-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ad-card,
+  .ad-card:not(:has(.ad-card-thumb)) {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 10px;
+    padding: 14px;
+  }
+  .ad-card-rank {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+  /* 이미지는 휴대폰에서 본문 아래로 내려서 가로 전체를 씁니다 */
+  .ad-card-thumb {
+    grid-column: 2;
+    width: 100%;
+    max-width: 240px;
+  }
+  .ad-card-headline {
+    font-size: 16px;
+  }
 }

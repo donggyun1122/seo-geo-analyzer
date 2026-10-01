@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { SHOPPING_ENABLED } from "../lib/featureFlags";
 
 const MAX_WAIT_MS = 480000; // 8분 — 처음 실행은 npm install/Playwright 설치까지 새로 해서 오래 걸릴 수 있어요.
 const INTERVAL_MS = 6000;
@@ -206,4 +207,11 @@ export default function ShoppingRankCheckPage() {
       )}
     </div>
   );
+}
+
+// 네이버 쇼핑 기능은 현재 미노출 상태예요(lib/featureFlags.js의 SHOPPING_ENABLED). 꺼져 있으면
+// 이 주소로 직접 들어와도 404(페이지 없음)로 처리됩니다.
+export async function getStaticProps() {
+  if (!SHOPPING_ENABLED) return { notFound: true };
+  return { props: {} };
 }

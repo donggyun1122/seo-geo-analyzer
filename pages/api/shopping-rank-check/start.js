@@ -1,9 +1,13 @@
+const { SHOPPING_ENABLED } = require("../../../lib/featureFlags");
 // "네이버 쇼핑 순위 체크" 화면의 "조회하기" 버튼 — keyword-place-list/start.js와 동일한 구조.
 const crypto = require("crypto");
 
 const WORKFLOW_FILE = "shopping-rank-check.yml";
 
 export default async function handler(req, res) {
+  if (!SHOPPING_ENABLED) {
+    return res.status(404).json({ ok: false, error: "네이버 쇼핑 분석 기능은 현재 비활성화되어 있어요." });
+  }
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ ok: false, error: "POST 요청만 지원해요." });

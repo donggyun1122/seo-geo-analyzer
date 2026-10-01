@@ -1,10 +1,8 @@
-const { SHOPPING_ENABLED } = require("../../../lib/featureFlags");
+// "검색광고 분석" 요청 후 화면이 폴링하는 엔드포인트 — requestId로 그 요청의 결과만 정확히 찾습니다.
+
 const { getSupabaseAdmin } = require("../../../lib/supabaseAdmin");
 
 export default async function handler(req, res) {
-  if (!SHOPPING_ENABLED) {
-    return res.status(404).json({ ok: false, error: "네이버 쇼핑 분석 기능은 현재 비활성화되어 있어요." });
-  }
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ ok: false, error: "GET 요청만 지원해요." });
@@ -23,10 +21,8 @@ export default async function handler(req, res) {
   }
 
   const { data, error } = await supabase
-    .from("shopping_rank_checks")
-    .select(
-      "requested_at, keyword, product_id_input, product_id_value, product_id_space, area_mode, max_rank, status, error_message, rank, max_rank_checked, matched_item"
-    )
+    .from("search_ad_lists")
+    .select("requested_at, keyword, status, error_message, results")
     .eq("request_id", requestId)
     .order("requested_at", { ascending: false })
     .limit(1);
@@ -34,25 +30,17 @@ export default async function handler(req, res) {
   if (error) return res.status(500).json({ ok: false, error: error.message });
 
   const row = (data || [])[0];
-  if (!row) {
-    return res.status(200).json({ ok: true, done: false });
-  }
+  if (!row) return res.status(200).json({ ok: true, done: false });
 
   return res.status(200).json({
     ok: true,
     done: true,
     result: {
       keyword: row.keyword,
-      productIdInput: row.product_id_input,
-      productIdValue: row.product_id_value,
-      productIdSpace: row.product_id_space,
-      areaMode: row.area_mode,
-      maxRank: row.max_rank,
+      requestedAt: row.requested_at,
       status: row.status,
       errorMessage: row.error_message,
-      rank: row.rank,
-      maxRankChecked: row.max_rank_checked,
-      matchedItem: row.matched_item,
+      results: row.results || [],
     },
   });
 }

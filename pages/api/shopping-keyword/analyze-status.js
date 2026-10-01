@@ -1,6 +1,10 @@
+const { SHOPPING_ENABLED } = require("../../../lib/featureFlags");
 const { getSupabaseAdmin } = require("../../../lib/supabaseAdmin");
 
 export default async function handler(req, res) {
+  if (!SHOPPING_ENABLED) {
+    return res.status(404).json({ ok: false, error: "네이버 쇼핑 분석 기능은 현재 비활성화되어 있어요." });
+  }
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ ok: false, error: "GET 요청만 지원해요." });
