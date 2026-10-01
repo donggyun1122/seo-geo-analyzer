@@ -25,6 +25,7 @@ const NAV_ITEMS = [
       { href: "/search-ad-rank", label: "키워드 노출분석" },
     ],
   },
+  { href: "/news-clipping", label: "뉴스 클리핑" },
   ...(SHOPPING_ENABLED
     ? [
         {

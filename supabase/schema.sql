@@ -262,6 +262,8 @@ alter table search_ad_lists add column if not exists pages_fetched integer;
 -- 같은 광고주가 다른 문안으로 또 나와서 하나로 합친 횟수 (2026-10-01 중복/순위 보정)
 alter table search_ad_lists add column if not exists rank_source text;
 alter table search_ad_lists add column if not exists merged_duplicates integer;
+-- 모바일에서 광고를 어떻게 모았는지(예: "첫 화면 → 더보기 2번 → 페이지 이동으로 새 광고 3페이지 추가")
+alter table search_ad_lists add column if not exists load_summary text;
 
 create index if not exists idx_search_ad_lists_request_id
   on search_ad_lists (request_id);
@@ -301,3 +303,58 @@ create index if not exists idx_search_ad_rank_checks_site_kw_time
   on search_ad_rank_checks (site_url, keyword, requested_at desc);
 
 -- alter table search_ad_rank_checks enable row level security; -- 다중 사용자로 확장 시
+
+-- ============================================================================
+-- "뉴스 클리핑" — 고객사 모니터링 목록 (2026-10-01 추가)
+--
+-- 기사 자체는 저장하지 않아요. 화면을 열 때마다 네이버 뉴스 검색 API(공식)로 최근 기사를 바로 모아요.
+-- 이 테이블은 "어떤 기업을, 어떤 검색어로 볼지"만 저장해요. 테이블이 없거나 비어 있으면
+-- 코드에 들어있는 기본 22곳(lib/news/defaultClients.js)을 써요.
+--   keywords          검색어(기사 제목/요약에 이 중 하나가 들어있어야 인정)
+--   require_any       문맥 단어(선택) — 이름이 흔한 단어일 때 이 중 하나가 함께 나와야 인정
+--   exclude_keywords  제외 단어(선택) — 이 단어가 들어간 기사는 제외
+--   ignore_terms      키워드를 품은 다른 단어(선택) — 예: 하이브 ↔ 하이브리드
+--   match_scope       'title' = 제목에 있을 때만 / 'title_desc' = 제목 또는 요약(기본)
+create table if not exists news_clients (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  keywords text[] not null default '{}',
+  require_any text[] not null default '{}',
+  exclude_keywords text[] not null default '{}',
+  ignore_terms text[] not null default '{}',
+  match_scope text not null default 'title_desc' check (match_scope in ('title', 'title_desc')),
+  domain text,
+  sort_order int not null default 0,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_news_clients_sort on news_clients (sort_order, created_at);
+
+-- 기본 22곳 넣기 (이미 같은 이름이 있으면 건너뜀 — 여러 번 실행해도 안전해요)
+insert into news_clients (name, keywords, require_any, exclude_keywords, ignore_terms, match_scope, domain, sort_order) values
+  ('교원', array['교원그룹','교원투어','교원라이프','교원웰스','교원 빨간펜'], '{}', '{}', '{}', 'title_desc', 'kyowon.co.kr', 0),
+  ('BIGHIT MUSIC', array['빅히트뮤직','BIGHIT MUSIC'], '{}', '{}', '{}', 'title_desc', 'ibighit.com', 1),
+  ('삼성자산운용', array['삼성자산운용'], '{}', '{}', '{}', 'title_desc', 'samsungfund.com', 2),
+  ('고려은단', array['고려은단'], '{}', '{}', '{}', 'title_desc', null, 3),
+  ('하이브', array['하이브','HYBE'], '{}', '{}', array['하이브리드'], 'title', 'hybecorp.com', 4),
+  ('구몬', array['구몬'], '{}', '{}', '{}', 'title_desc', null, 5),
+  ('LG전자', array['LG전자'], '{}', '{}', '{}', 'title', 'lge.co.kr', 6),
+  ('DB손해보험', array['DB손해보험','DB손보'], '{}', '{}', '{}', 'title_desc', 'idbins.com', 7),
+  ('아고다', array['아고다'], '{}', '{}', '{}', 'title_desc', 'agoda.com', 8),
+  ('이투스', array['이투스'], '{}', '{}', '{}', 'title_desc', 'etoos.com', 9),
+  ('레뷰', array['레뷰코퍼레이션','레뷰'], '{}', '{}', '{}', 'title_desc', 'revu.net', 10),
+  ('부킹닷컴', array['부킹닷컴'], '{}', '{}', '{}', 'title_desc', 'booking.com', 11),
+  ('디클래시', array['디클래시'], '{}', '{}', '{}', 'title_desc', null, 12),
+  ('스카이스캐너', array['스카이스캐너'], '{}', '{}', '{}', 'title_desc', 'skyscanner.co.kr', 13),
+  ('KOZ 엔터테인먼트', array['KOZ엔터테인먼트','KOZ 엔터'], '{}', '{}', '{}', 'title_desc', null, 14),
+  ('쌤소나이트', array['쌤소나이트'], '{}', '{}', '{}', 'title_desc', 'samsonite.com', 15),
+  ('미소페', array['미소페'], '{}', '{}', '{}', 'title_desc', null, 16),
+  ('와이어바알리', array['와이어바알리'], '{}', '{}', '{}', 'title_desc', 'wirebarley.com', 17),
+  ('브람스', array['브람스'], '{}', array['교향곡','협주곡','작곡가','소나타','피아니스트','바이올리니스트','오케스트라','브람스를 좋아하세요'], '{}', 'title_desc', null, 18),
+  ('카약', array['카약'], array['KAYAK','여행','항공','호텔','숙소','항공권','앱','플랫폼','검색'], '{}', array['카약킹'], 'title_desc', 'kayak.co.kr', 19),
+  ('호텔스컴바인', array['호텔스컴바인'], '{}', '{}', '{}', 'title_desc', 'hotelscombined.co.kr', 20),
+  ('스카이라이프', array['스카이라이프'], '{}', '{}', '{}', 'title_desc', 'skylife.co.kr', 21)
+on conflict (name) do nothing;
+
+-- alter table news_clients enable row level security; -- 다중 사용자로 확장 시

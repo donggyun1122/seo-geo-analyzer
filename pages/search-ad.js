@@ -104,6 +104,7 @@ export default function SearchAdPage() {
             pagesFetched: r.pagesFetched,
             rankSource: r.rankSource,
             mergedDuplicates: r.mergedDuplicates || 0,
+            loadSummary: r.loadSummary || null,
           });
           if (r.status === "ok") {
             setAds(r.results || []);
@@ -199,7 +200,7 @@ export default function SearchAdPage() {
         <p className="search-hint">
           {device === "pc"
             ? "PC 검색의 파워링크 광고 더보기 페이지를 마지막 페이지까지 넘겨서 전체 광고를 모아요."
-            : "모바일 검색의 파워링크 광고를 목록 아래 '더보기'를 끝까지 눌러가며 전체 광고를 모아요."}{" "}
+            : "모바일 검색의 파워링크 광고를 '더보기'와 페이지 이동으로 끝까지 확인해서 전체 광고를 모아요."}{" "}
           보통 1~3분 걸리고, 광고가 많은 키워드는 조금 더 걸려요.
         </p>
         {busy && (
@@ -250,12 +251,12 @@ export default function SearchAdPage() {
             {resultMeta && resultMeta.requestedAt && (
               <p className="search-hint">
                 조회 시각: {new Date(resultMeta.requestedAt).toLocaleString("ko-KR")}
-                {resultMeta.pagesFetched
-                  ? resultMeta.device === "mobile"
-                    ? resultMeta.pagesFetched > 1
-                      ? ` · 더보기 ${resultMeta.pagesFetched - 1}번까지 눌러서 전체 확인`
-                      : " · 더보기 없이 첫 화면에서 전체 확인"
-                    : ` · 광고 더보기 ${resultMeta.pagesFetched}페이지까지 전체 확인`
+                {resultMeta.device === "mobile"
+                  ? resultMeta.loadSummary
+                    ? ` · ${resultMeta.loadSummary}`
+                    : ""
+                  : resultMeta.pagesFetched
+                  ? ` · 광고 더보기 ${resultMeta.pagesFetched}페이지까지 전체 확인`
                   : ""}
               </p>
             )}

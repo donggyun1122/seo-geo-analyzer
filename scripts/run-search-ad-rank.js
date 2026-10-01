@@ -28,10 +28,17 @@ async function checkDevice(provider, keyword, siteUrl, advertiserName, device) {
     return { status: "error", errorMessage: err.message || String(err) };
   }
   if (r.status === "ok") {
-    const base = { device, rankSource: r.rankSource, pagesFetched: r.pagesFetched, scannedAds: r.items.length, note: r.errorMessage || null };
+    const base = {
+      device,
+      rankSource: r.rankSource,
+      pagesFetched: r.pagesFetched,
+      scannedAds: r.items.length,
+      loadSummary: r.loadSummary || null,
+      note: r.errorMessage || null,
+    };
     if (r.moreButton) console.log(`  (모바일 더보기 버튼: ${r.moreButton})`);
     if (r.found) {
-      const ad = r.items[r.items.length - 1];
+      const ad = r.items.find((it) => it.matched) || r.items[r.items.length - 1];
       return { status: "found", rank: ad.rank, page: ad.page, pageLabel: ad.pageLabel || null, ad, ...base };
     }
     return { status: "not_found", rank: null, ...base };

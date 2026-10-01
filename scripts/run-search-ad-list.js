@@ -26,6 +26,7 @@ async function main() {
     result = { status: "error", items: [], pagesFetched: 0, errorMessage: err.message || String(err) };
   }
   if (result.moreButton) console.log(`  (모바일 더보기 버튼: ${result.moreButton})`);
+  if (result.loadSummary) console.log(`  (모은 방법: ${result.loadSummary})`);
   console.log(`  → ${result.status} (광고 ${result.items.length}개, ${result.pagesFetched || 0}${device === "mobile" ? "회 불러옴" : "페이지"})${result.errorMessage ? ` — ${result.errorMessage}` : ""}`);
 
   const supabase = getSupabaseAdmin();
@@ -36,6 +37,7 @@ async function main() {
     pages_fetched: result.pagesFetched || 0,
     rank_source: result.rankSource || null,
     merged_duplicates: result.mergedDuplicates || 0,
+    load_summary: result.loadSummary || null,
     status: result.status,
     error_message: result.errorMessage,
     results: result.items,

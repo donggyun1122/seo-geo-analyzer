@@ -42,7 +42,7 @@ function DeviceResult({ label, r }) {
     tone = "warn";
     main = "노출 안 됨";
     sub = `광고 ${r.scannedAds || 0}개(${
-      r.device === "mobile" ? (r.pagesFetched > 1 ? `더보기 ${r.pagesFetched - 1}번까지` : "첫 화면") : `${r.pagesFetched || 0}페이지`
+      r.device === "mobile" ? r.loadSummary || "모바일 전체" : `${r.pagesFetched || 0}페이지`
     })를 모두 확인했는데 우리 광고가 없었어요.`;
   } else if (r.status === "empty") {
     main = "광고 없음";
