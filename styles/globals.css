@@ -5218,7 +5218,7 @@ a.quick-card:hover .quick-card-go {
   font-family: "Paperlogy", "Arial Black", var(--font-sans);
   font-size: calc(min(21.5vw, 38vh) * var(--fit, 1));
   font-weight: 900;
-  line-height: 0.98;
+  line-height: 0.88; /* DG MKT 과 LAB 사이 간격 */
   letter-spacing: -0.01em;
   text-align: center;
   text-transform: uppercase;
@@ -5305,6 +5305,12 @@ a.quick-card:hover .quick-card-go {
   transform-origin: top;
 }
 
+@keyframes shero-grid {
+  to {
+    transform: translate3d(44px, 44px, 0);
+  }
+}
+
 @keyframes shero-cue {
   0% {
     transform: scaleY(0);
@@ -5331,6 +5337,37 @@ a.quick-card:hover .quick-card-go {
   }
   .shero-tint {
     display: none;
+  }
+  .shero-word {
+    position: relative;
+    z-index: 1;
+    line-height: 0.98;
+  }
+
+  /* 모바일 배경 모션 — 은은한 격자가 대각선으로 천천히 흘러요.
+     흰 화면(처음)에는 옅은 회색 선, 남색 화면(카피)에는 옅은 흰 선으로 이어져요.
+     격자 한 칸(44px)만큼만 움직였다가 처음으로 돌아가서 끊김 없이 반복돼요. */
+  .shero-mask::before,
+  .shero-media::before {
+    content: "";
+    position: absolute;
+    inset: -44px;
+    background-size: 44px 44px;
+    animation: shero-grid 9s linear infinite;
+    will-change: transform;
+    pointer-events: none;
+  }
+  .shero-mask::before {
+    background-image: linear-gradient(to right, rgba(15, 23, 42, 0.085) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(15, 23, 42, 0.085) 1px, transparent 1px);
+    -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 50%, #000 35%, transparent 100%);
+    mask-image: radial-gradient(ellipse 85% 70% at 50% 50%, #000 35%, transparent 100%);
+  }
+  .shero-media::before {
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+    -webkit-mask-image: radial-gradient(ellipse 90% 75% at 50% 50%, #000 30%, transparent 100%);
+    mask-image: radial-gradient(ellipse 90% 75% at 50% 50%, #000 30%, transparent 100%);
   }
   .shero-word {
     font-size: calc(min(22vw, 30vh) * var(--fit, 1));
@@ -5370,6 +5407,9 @@ a.quick-card:hover .quick-card-go {
   .shero-mask,
   .shero-cue {
     display: none;
+  }
+  .shero-media::before {
+    animation: none;
   }
   .shero-dim {
     opacity: 1;
