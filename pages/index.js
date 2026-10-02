@@ -1,3 +1,4 @@
+import Head from "next/head";
 import Link from "next/link";
 import Icon from "../components/Icon";
 import Reveal from "../components/ui/Reveal";
@@ -138,6 +139,12 @@ export default function Home() {
   const today = TODAY_INTELLIGENCE;
   return (
     <div className="home">
+      <Head>
+        {/* PC 첫 화면에 바로 보여야 하는 영상 첫 장면을 미리 받아둬요(모바일은 받지 않음) */}
+        <link rel="preload" as="image" href="/videos/hero-poster.jpg" media="(min-width: 901px)" />
+        {/* 첫 화면 제목 글꼴을 미리 받아서 글자가 바뀌어 보이는 순간을 줄여요 */}
+        <link rel="preload" as="font" type="font/woff" href="/fonts/Paperlogy-9Black.woff" crossOrigin="anonymous" />
+      </Head>
       {/* ── HERO (스크롤 연출: 큰 글자 → 영상 전체 화면 → 카피) ── */}
       <ScrollHero />
 

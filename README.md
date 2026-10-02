@@ -21,7 +21,7 @@
 - 메뉴에 **Soon** 이 붙은 항목은 아직 기능이 없는 자리 표시예요. 눌러지지 않아요.
 - **메뉴를 고치는 곳은 한 군데**: `lib/siteNav.js`. 여기만 고치면 상단 메뉴·모바일 메뉴·푸터·Dashboard·페이지 상단 위치 표시에 모두 반영돼요.
 - **홈 화면의 숫자는 예시(Demo) 데이터**예요(`lib/demoData.js`). "Sample" / "DEMO DATA" 표시가 붙어 있어요.
-- 디자인 기준 색·글꼴은 `styles/globals.css` 맨 위 `:root`에 모여 있어요. 글꼴은 Pretendard, 홈 첫 화면의 큰 영문 글자는 Anton(둘 다 `pages/_document.js`에서 불러옴).
+- 디자인 기준 색·글꼴은 `styles/globals.css` 맨 위 `:root`에 모여 있어요. 글꼴은 Pretendard(`pages/_document.js`에서 불러옴), 홈 첫 화면의 큰 글자와 카피 제목은 Paperlogy 9 Black(`public/fonts/Paperlogy-9Black.woff`, SIL Open Font License 1.1 — `styles/globals.css`의 `@font-face`).
 - 쇼핑 검색 기능은 삭제하지 않았고, 메뉴·홈 어디에도 노출하지 않아요(`lib/featureFlags.js`).
 
 ### 홈 첫 화면(Hero) — 스크롤 연출 (2026-10-02)
@@ -29,6 +29,8 @@
 - **PC**: 흰 배경의 큰 글자(DG MKT / LAB) 안으로 영상이 보이고 → 스크롤하면 화면이 고정된 채 글자가 커지고 → 영상이 화면 전체를 채운 뒤 → 카피가 떠올라요. 더 내리면 다음 섹션으로 넘어가요.
 - **모바일(900px 이하)**: 영상 없이 같은 흐름이에요(큰 글자 → 짙은 남색 화면 → 카피). 영상 파일은 모바일에서 내려받지 않아요.
 - 파일: `components/home/ScrollHero.js`(동작), `styles/globals.css` 맨 아래 `.shero-*`(모양), **영상은 `public/videos/hero.mp4`, 영상이 뜨기 전 정지 화면은 `public/videos/hero-poster.jpg`**.
+- **첫 화면에 바로 보이게**: 영상이 준비되기 전에는 영상의 첫 장면(`hero-poster.jpg`)을 먼저 보여주고, 재생이 시작되면 그대로 이어져요(검은 화면 없음). 그래서 **포스터는 반드시 영상의 첫 장면**이어야 해요.
+- **끊김 없는 반복**: `hero.mp4`는 끝 1.5초가 처음 장면으로 자연스럽게 겹쳐 넘어가도록(크로스페이드) 만들어둔 반복용 영상이에요(약 10초). 다른 영상으로 바꿀 때도 같은 처리를 해야 반복 지점이 튀지 않아요 — 원본을 주시면 만들어 드려요.
 - **영상 바꾸기**: 같은 이름(`hero.mp4`, `hero-poster.jpg`)으로 `public/videos` 폴더에 덮어쓰면 돼요. 소리 없는 가로 영상, 10~15초, 5MB 안팎을 권장해요(GitHub 웹 업로드는 파일당 25MB까지).
 - **문구 바꾸기**: `pages/index.js`의 `<ScrollHero />`에 `lines`(큰 글자), `label`, `title`, `description` 값을 넣으면 돼요. 안 넣으면 `ScrollHero.js` 맨 위의 기본 문구가 나와요.
 - 스크롤 길이는 `.shero`의 `height: 340vh`(모바일 250vh)로 조절해요. 숫자가 클수록 천천히 진행돼요.

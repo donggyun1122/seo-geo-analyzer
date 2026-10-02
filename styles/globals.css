@@ -5143,6 +5143,15 @@ a.quick-card:hover .quick-card-go {
    큰 글자 안의 영상 → 글자 확대 → 영상 전체 화면 → 카피
    --scale / --mask / --dim / --copy / --cue 값은 스크롤에 맞춰 자바스크립트가 넣어줘요.
    ========================================================================== */
+/* 홈 첫 화면 제목용 글꼴 — Paperlogy 9 Black (SIL Open Font License 1.1, 파일: public/fonts) */
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/Paperlogy-9Black.woff") format("woff");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 .shero {
   position: relative;
   height: 340vh; /* 이 길이만큼 스크롤하는 동안 화면이 고정돼요 */
@@ -5168,11 +5177,24 @@ a.quick-card:hover .quick-card-go {
   background: var(--navy-dark);
 }
 
+/* PC: 영상이 준비되기 전에도 첫 장면(포스터)이 바로 보여요. 모바일은 이 이미지를 내려받지 않아요. */
+@media (min-width: 901px) {
+  .shero-media {
+    background: #dfe8f5 url("/videos/hero-poster.jpg") center / cover no-repeat;
+  }
+}
+
 .shero-video {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.shero-video.is-ready {
+  opacity: 1;
 }
 
 /* 밝은 영상에서도 글자가 또렷하게 보이도록 살짝 눌러줘요 */
@@ -5193,16 +5215,16 @@ a.quick-card:hover .quick-card-go {
 
 .shero-word {
   flex: none;
-  font-family: "Anton", Impact, "Haettenschweiler", "Arial Narrow Bold", "Arial Black", sans-serif;
-  font-size: calc(min(23vw, 38vh) * var(--fit, 1));
-  font-weight: 400;
-  line-height: 0.95;
-  letter-spacing: 0.005em;
+  font-family: "Paperlogy", "Arial Black", var(--font-sans);
+  font-size: calc(min(21.5vw, 38vh) * var(--fit, 1));
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: -0.01em;
   text-align: center;
   text-transform: uppercase;
   color: #000;
   transform: scale(var(--scale, 1));
-  transform-origin: 50% 70%;
+  transform-origin: 50% 50%; /* 문구 한가운데를 기준으로 확대 */
   will-change: transform;
   user-select: none;
 }
@@ -5243,10 +5265,11 @@ a.quick-card:hover .quick-card-go {
 
 .shero-copy h1 {
   margin: 22px 0 0;
-  font-size: clamp(30px, 4.6vw, 64px);
-  font-weight: 800;
-  letter-spacing: -0.035em;
-  line-height: 1.2;
+  font-family: "Paperlogy", var(--font-sans);
+  font-size: clamp(30px, 4.4vw, 62px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
 }
 
 .shero-copy p {
@@ -5310,7 +5333,7 @@ a.quick-card:hover .quick-card-go {
     display: none;
   }
   .shero-word {
-    font-size: calc(min(30vw, 30vh) * var(--fit, 1));
+    font-size: calc(min(22vw, 30vh) * var(--fit, 1));
   }
   .shero-dim {
     background: rgba(8, 12, 24, 0.25);

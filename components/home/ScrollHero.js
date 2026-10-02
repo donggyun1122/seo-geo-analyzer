@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 //
 // PC(901px 이상)
 //   1) 흰 배경 위 큰 글자(DG MKT / LAB) 안으로만 영상이 보여요.
-//   2) 스크롤하면 화면은 고정된 채 글자가 점점 커지고,
+//   2) 스크롤하면 화면은 고정된 채 글자가 문구 한가운데를 기준으로 점점 커지고,
 //   3) 글자가 화면을 넘어서면 흰 배경이 사라져 영상이 화면 전체를 채워요.
 //   4) 영상이 어두워지면서 카피가 떠올라요. 더 내리면 고정이 풀리고 다음 섹션으로 넘어가요.
 // 모바일(900px 이하)
@@ -12,6 +12,8 @@ import { useEffect, useRef, useState } from "react";
 //   (영상 파일은 모바일에서 아예 내려받지 않아요.)
 //
 // 동작 원리: 스크롤 위치를 0~1 값(--p)으로 바꿔 CSS에 넘기고, 나머지는 CSS가 계산해요.
+// 첫 화면: 영상이 준비되기 전에는 영상의 첫 장면(hero-poster.jpg)을 바로 보여주고, 재생이 시작되면
+//          그 위로 자연스럽게 넘어가요(검은 화면이 보이지 않도록). 포스터는 반드시 영상의 첫 장면이어야 해요.
 // 영상 교체: public/videos/hero.mp4 (소리 없는 가로 영상, 5MB 안팎 권장) + hero-poster.jpg(영상이 뜨기 전 정지 화면)
 
 const clamp = (v, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
@@ -29,9 +31,9 @@ export default function ScrollHero({
   const sectionRef = useRef(null);
   const stageRef = useRef(null);
   const wordRef = useRef(null);
-  const anchorRef = useRef(null);
   const videoRef = useRef(null);
   const [desktop, setDesktop] = useState(false);
+  const [videoReady, setVideoReady] = useState(false); // 영상이 실제로 재생되기 시작했는지
 
   // PC에서만 영상을 불러와요.
   useEffect(() => {
@@ -56,24 +58,12 @@ export default function ScrollHero({
     let raf = 0;
     let lastP = -1;
 
-    // 글자를 키울 때 기준점 — 굵은 세로 획 한가운데로 잡아야 확대했을 때 화면이 영상으로 꽉 차요.
-    function setOrigin() {
-      const a = anchorRef.current;
-      if (!a) return;
-      // 글자가 화면 폭을 넘으면(글꼴이 늦게 뜨거나 대체 글꼴일 때) 폭에 맞게 줄여요.
+    // 글자가 화면 폭을 넘으면(글꼴이 늦게 뜨거나 대체 글꼴일 때) 폭에 맞게 줄여요.
+    // 확대 기준점은 CSS에서 문구 한가운데(50% 50%)로 고정돼 있어요.
+    function fitWord() {
       stage.style.setProperty("--fit", "1");
       const room = stage.clientWidth * 0.92;
       if (word.offsetWidth > room) stage.style.setProperty("--fit", (room / word.offsetWidth).toFixed(4));
-      // offset* 값은 확대(transform)의 영향을 받지 않아서 언제 재도 같은 값이 나와요.
-      let x = a.offsetLeft + a.offsetWidth * 0.26; // L의 세로 획은 글자 왼쪽에 있어요
-      let y = a.offsetTop + a.offsetHeight * 0.45;
-      let el = a.offsetParent;
-      while (el && el !== word) {
-        x += el.offsetLeft;
-        y += el.offsetTop;
-        el = el.offsetParent;
-      }
-      word.style.transformOrigin = `${x}px ${y}px`;
     }
 
     function update() {
@@ -85,9 +75,10 @@ export default function ScrollHero({
       lastP = p;
 
       const zoom = range(p, 0, 0.56);
-      const scale = 1 + Math.pow(zoom, 2.4) * 34; // 처음엔 천천히, 뒤로 갈수록 빠르게
+      const scale = 1 + Math.pow(zoom, 2.2) * 17; // 처음엔 천천히, 뒤로 갈수록 빠르게
       stage.style.setProperty("--scale", scale.toFixed(4));
-      stage.style.setProperty("--mask", (1 - range(p, 0.34, 0.56)).toFixed(4)); // 흰 배경이 사라지는 정도
+      // 문구 한가운데로 확대하면 가운데가 글자 사이 흰 여백이라, 글자가 커지는 동안 흰 배경을 함께 걷어내요.
+      stage.style.setProperty("--mask", (1 - range(p, 0.2, 0.52)).toFixed(4)); // 흰 배경이 사라지는 정도
       stage.style.setProperty("--dim", range(p, 0.42, 0.7).toFixed(4)); // 영상이 어두워지는 정도
       stage.style.setProperty("--copy", range(p, 0.6, 0.8).toFixed(4)); // 카피가 나타나는 정도
       stage.style.setProperty("--cue", (1 - range(p, 0, 0.08)).toFixed(4)); // "Scroll" 안내
@@ -106,13 +97,13 @@ export default function ScrollHero({
       if (!raf) raf = requestAnimationFrame(update);
     };
     const onResize = () => {
-      setOrigin();
+      fitWord();
       lastP = -1;
       onScroll();
     };
 
     stage.classList.add("is-live");
-    setOrigin();
+    fitWord();
     update();
     // 글꼴이 늦게 적용되면 글자 위치가 바뀌니 기준점을 다시 잡아요.
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(onResize).catch(() => {});
@@ -126,15 +117,23 @@ export default function ScrollHero({
     };
   }, [desktop]);
 
-  // 확대 기준이 되는 글자: 마지막 줄의 첫 글자(예: LAB의 L — 굵은 세로 획)
-  const lastLine = lines[lines.length - 1];
-
   return (
     <section className="shero" ref={sectionRef} aria-label="DG MKT LAB">
       <div className="shero-stage" ref={stageRef}>
         <div className="shero-media" aria-hidden="true">
           {desktop && (
-            <video ref={videoRef} className="shero-video" src={videoSrc} poster={posterSrc} autoPlay muted loop playsInline preload="auto" />
+            <video
+              ref={videoRef}
+              className={`shero-video${videoReady ? " is-ready" : ""}`}
+              src={videoSrc}
+              poster={posterSrc}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              onPlaying={() => setVideoReady(true)}
+            />
           )}
           <div className="shero-tint" />
         </div>
@@ -142,17 +141,11 @@ export default function ScrollHero({
         {/* 흰 배경 + 검은 글자를 영상 위에 "스크린"으로 겹치면, 검은 글자 자리에만 영상이 비쳐요. */}
         <div className="shero-mask" aria-hidden="true">
           <div className="shero-word" ref={wordRef}>
-            {lines.slice(0, -1).map((l) => (
+            {lines.map((l) => (
               <span key={l} className="shero-line">
                 {l}
               </span>
             ))}
-            <span className="shero-line">
-              <span ref={anchorRef} className="shero-anchor">
-                {lastLine.charAt(0)}
-              </span>
-              {lastLine.slice(1)}
-            </span>
           </div>
         </div>
 

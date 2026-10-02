@@ -10,10 +10,6 @@ export default function Document() {
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
         />
-        {/* 홈 첫 화면의 큰 영문 글자용 글꼴(Anton) */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap" />
         <meta name="theme-color" content="#ffffff" />
       </Head>
       <body>
