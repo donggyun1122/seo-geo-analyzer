@@ -360,14 +360,14 @@ export default function PlacePage() {
           if (result.status === "error") {
             setCheckState((s) => ({
               ...s,
-              [placeKeywordId]: { phase: "error", message: `측정 실패: ${result.errorMessage || "원인 불명의 오류예요."}` },
+              [placeKeywordId]: { phase: "error", message: "측정에 실패했어요. 잠시 후 다시 시도해주세요." },
             }));
           } else if (result.status === "blocked") {
             setCheckState((s) => ({
               ...s,
               [placeKeywordId]: {
                 phase: "blocked",
-                message: `측정 제한: ${result.errorMessage || "네이버가 자동화 접근을 제한했어요."}`,
+                message: "접근이 제한됐어요. 잠시 후 다시 시도해주세요.",
               },
             }));
           } else {
@@ -397,7 +397,7 @@ export default function PlacePage() {
           [placeKeywordId]: {
             phase: "timeout",
             message:
-              "8분이 지나도 결과가 안 왔어요. GitHub 저장소의 Actions 탭에서 워크플로가 실제로 실행 중인지, 에러로 멈추지 않았는지 확인해보세요. (처음 실행이라면 npm install/브라우저 설치까지 새로 하느라 원래도 오래 걸려요 — 완료되면 다음부터는 캐시 덕분에 훨씬 빨라져요.)",
+              "결과를 받지 못했어요. 잠시 후 다시 시도해주세요.",
           },
         }));
       }
@@ -434,7 +434,7 @@ export default function PlacePage() {
     <div className="container">
       <div className="header">
         <h1>플레이스 순위</h1>
-        <p>매장과 키워드를 등록하면, 매일 한 번씩 네이버 플레이스 검색 결과에서의 순위를 측정해서 기록해요.</p>
+        <p>매장과 키워드를 등록하고 네이버 플레이스 순위 변화를 확인하세요.</p>
       </div>
 
       <div className="card">
@@ -459,9 +459,6 @@ export default function PlacePage() {
           </button>
         </form>
         {placeFormError && <div className="error-box">{placeFormError}</div>}
-        <p className="search-hint">
-          업체명 문자열이 아니라 URL에서 추출한 고유 ID로 매장을 식별해요. 동명 매장이 있어도 정확히 구분돼요.
-        </p>
       </div>
 
       <div className="card">
@@ -595,11 +592,6 @@ export default function PlacePage() {
         )}
       </div>
 
-      <p className="footer-note">
-        순위는 기본적으로 매일 한 번(GitHub Actions 스케줄) 측정돼요. 키워드별 &ldquo;지금 측정하기&rdquo;를 누르면
-        그 자리에서 한 번 더 측정을 요청할 수 있어요(처음 실행은 3~5분, 이후엔 캐시 덕분에 1~2분 정도로 줄어들어요). 네이버가
-        자동화된 접근으로 판단해 결과를 제한하면 우회하지 않고 &ldquo;접근 제한&rdquo; 상태로 그대로 기록해요.
-      </p>
     </div>
   );
 }

@@ -689,7 +689,6 @@ export default function KeywordPage() {
                       {saturation.ratio}
                     </span>
                   </div>
-                  <div className="kw-stat-sub">블로그 누적발행량 ÷ 월간 검색량으로 직접 계산한 참고 지수예요.</div>
                 </>
               )}
             </StatCard>

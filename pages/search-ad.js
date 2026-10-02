@@ -110,12 +110,18 @@ export default function SearchAdPage() {
             setAds(r.results || []);
             setPhase("done");
             setMessage("");
-            // 중간 페이지에서 멈춘 경우 등 — 결과는 보여주되 안내를 같이 띄워요.
-            setNotice(r.errorMessage || "");
+            // 중간에 멈춘 경우 — 결과는 보여주되 짧게 안내해요.
+            setNotice(r.errorMessage ? "일부 광고만 수집됐어요." : "");
           } else {
             setAds([]);
             setPhase(r.status === "empty" || r.status === "blocked" ? r.status : "error");
-            setMessage(r.errorMessage || "조회에 실패했어요.");
+            setMessage(
+              r.status === "empty"
+                ? "이 키워드에 노출된 광고가 없어요."
+                : r.status === "blocked"
+                ? "접근이 제한됐어요. 잠시 후 다시 시도해주세요."
+                : "조회에 실패했어요. 잠시 후 다시 시도해주세요."
+            );
           }
           return;
         }
@@ -125,7 +131,7 @@ export default function SearchAdPage() {
       if (Date.now() - startedAt > MAX_WAIT_MS) {
         stopTimers();
         setPhase("timeout");
-        setMessage("8분이 지나도 결과가 안 왔어요. GitHub 저장소의 Actions 탭에서 search-ad-list 워크플로가 실행 중인지, 에러로 멈추지 않았는지 확인해보세요.");
+        setMessage("결과를 받지 못했어요. 잠시 후 다시 시도해주세요.");
       }
     };
 
@@ -172,7 +178,7 @@ export default function SearchAdPage() {
     <div className="container">
       <div className="header">
         <h1>노출 광고 현황</h1>
-        <p>키워드를 검색하면 네이버 파워링크에 노출되는 광고 업체와 광고 문안, 이미지 등 소재를 한 번에 정리해드려요.</p>
+        <p>키워드별 파워링크 광고 업체와 소재를 한눈에 확인하세요.</p>
       </div>
 
       <div className="card">
@@ -194,20 +200,13 @@ export default function SearchAdPage() {
         <form className="place-form" onSubmit={handleSearch}>
           <input type="text" placeholder="키워드 (예: 호텔예약)" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
           <button type="submit" disabled={busy || !keyword.trim()}>
-            {busy ? "분석 중..." : "분석하기"}
+            {busy ? "수집 중..." : "분석하기"}
           </button>
         </form>
-        <p className="search-hint">
-          {device === "pc"
-            ? "PC 검색의 파워링크 광고 더보기 페이지를 마지막 페이지까지 넘겨서 전체 광고를 모아요."
-            : "모바일 검색의 파워링크 광고를 '더보기'와 페이지 이동으로 끝까지 확인해서 전체 광고를 모아요."}{" "}
-          보통 1~3분 걸리고, 광고가 많은 키워드는 조금 더 걸려요.
-        </p>
         {busy && (
           <div className="ad-progress" role="status">
             <span className="ad-progress-dot" aria-hidden="true" />
-            {DEVICE_LABEL[device]} 광고를 페이지별로 모으는 중이에요… ({elapsed}초)
-            {elapsed > 90 && <span className="ad-progress-sub">처음 실행이면 준비 과정 때문에 3~5분까지 걸릴 수 있어요.</span>}
+            수집 중… ({elapsed}초)
           </div>
         )}
         {(phase === "error" || phase === "blocked" || phase === "timeout") && message && <div className="error-box">{message}</div>}
@@ -251,25 +250,6 @@ export default function SearchAdPage() {
             {resultMeta && resultMeta.requestedAt && (
               <p className="search-hint">
                 조회 시각: {new Date(resultMeta.requestedAt).toLocaleString("ko-KR")}
-                {resultMeta.device === "mobile"
-                  ? resultMeta.loadSummary
-                    ? ` · ${resultMeta.loadSummary}`
-                    : ""
-                  : resultMeta.pagesFetched
-                  ? ` · 광고 더보기 ${resultMeta.pagesFetched}페이지까지 전체 확인`
-                  : ""}
-              </p>
-            )}
-            {resultMeta && (resultMeta.rankSource || resultMeta.mergedDuplicates > 0) && (
-              <p className="search-hint">
-                {resultMeta.rankSource === "naver"
-                  ? "순위는 네이버가 각 광고에 붙여둔 순위 번호 기준이에요."
-                  : resultMeta.rankSource === "sequence"
-                  ? "순위는 화면에 나온 순서 기준이에요."
-                  : ""}
-                {resultMeta.mergedDuplicates > 0
-                  ? ` 페이지를 넘기는 사이 같은 광고주가 다른 문안으로 또 나온 ${resultMeta.mergedDuplicates}건은 처음 나온 자리 하나로 합쳤어요(카드의 "다른 문안"에서 볼 수 있어요).`
-                  : ""}
               </p>
             )}
             {notice && <div className="ad-notice">{notice}</div>}
@@ -291,11 +271,6 @@ export default function SearchAdPage() {
             ))}
           </div>
 
-          <p className="footer-note">
-            같은 광고주(같은 사이트)는 한 번만 보여드리고, 처음 나온 자리를 그 광고주의 순위로 봐요. 광고 링크(클릭하면 광고주에게 비용이
-            청구되는 추적 링크)는 쓰지 않고, 광고의 실제 사이트 주소로만 연결해요. 네이버 광고는 실시간 입찰 결과라 조회할 때마다, 그리고
-            보는 위치·시간에 따라 순서가 조금씩 달라질 수 있어요.
-          </p>
         </>
       )}
     </div>

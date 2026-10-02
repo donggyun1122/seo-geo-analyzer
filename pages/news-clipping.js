@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { CRITICAL_WORDS, WATCH_WORDS } from "../lib/news/riskRules";
 
 // "뉴스 클리핑" 화면 — 고객사별 최근 기사를 한눈에 봐요.
 // 기사는 화면을 열 때 /api/news/clips 가 네이버 뉴스 검색 API(공식)로 바로 모아와요.
@@ -151,7 +150,6 @@ function Modal({ title, onClose, children, wide }) {
 
 function ClientCard({ c, windowDays, nowMs, onOpenAll, menuOpen, onToggleMenu, onMove, dragProps, isDragOver }) {
   const preview = c.articles.slice(0, CARD_PREVIEW);
-  const partial = c.status === "partial";
   const failed = c.status === "error";
   return (
     <section
@@ -213,9 +211,7 @@ function ClientCard({ c, windowDays, nowMs, onOpenAll, menuOpen, onToggleMenu, o
       )}
 
       <footer className="news-card-foot">
-        <span className={`news-card-count${partial || failed ? " news-card-count-warn" : ""}`}>
-          {failed ? "수집 실패" : partial ? `일부 수집 · ${c.articleCount}건` : `${c.articleCount}건`}
-        </span>
+        <span className="news-card-count">{c.articleCount}건</span>
         {c.articleCount > 0 && (
           <button type="button" className="news-link-btn" onClick={onOpenAll}>
             전체 기사 보기 →
@@ -256,7 +252,6 @@ function AllArticles({ c, nowMs, windowDays }) {
     <>
       <p className="news-modal-sub">
         최근 {windowDays}일 · 검색어 {c.keywords.join(", ")}
-        {c.notes && c.notes.length > 0 && <span className="news-modal-warn"> · {c.notes.join(" ")}</span>}
       </p>
       <div className="news-filter-row">
         <div className="news-chips">
@@ -283,44 +278,6 @@ function AllArticles({ c, nowMs, windowDays }) {
         <div className="news-card-empty">조건에 맞는 기사가 없어요.</div>
       )}
     </>
-  );
-}
-
-function Criteria({ windowDays }) {
-  return (
-    <div className="news-criteria">
-      <h4>어디서 모으나요?</h4>
-      <p>
-        네이버 뉴스 검색(공식 API)에서 기업별 검색어로 최신 기사를 검색해요. 검색어 1개당 최신 100건을 확인하고, 그중 최근 {windowDays}일
-        기사만 보여줘요. 화면을 열거나 「새로고침」을 누를 때마다 새로 모아요(같은 결과는 5분간 재사용).
-      </p>
-      <h4>어떤 기사를 그 기업 기사로 보나요?</h4>
-      <ul>
-        <li>기사 제목이나 요약에 검색어가 실제로 들어있는 기사만 남겨요(띄어쓰기·대소문자 무시).</li>
-        <li>기사가 아주 많은 기업(예: LG전자, 하이브)은 제목에 이름이 있는 기사만 봐요.</li>
-        <li>이름이 흔한 단어인 기업(예: 카약, 브람스)은 문맥 단어·제외 단어로 엉뚱한 기사를 걸러요. 「모니터링 기업」에서 고칠 수 있어요.</li>
-        <li>같은 원문 주소이거나 제목이 똑같은 기사(통신사 전재 등)는 하나로 합쳐요.</li>
-      </ul>
-      <h4>표시 기준</h4>
-      <ul>
-        <li>
-          <span className="news-tag news-tag-critical">즉시 확인</span> 제목에 아래 단어가 있는 기사
-          <span className="news-wordlist">{CRITICAL_WORDS.join(" · ")}</span>
-        </li>
-        <li>
-          <span className="news-tag news-tag-watch">관찰 항목</span> 제목에 아래 단어가 있거나, 즉시 확인 단어가 요약에만 있는 기사
-          <span className="news-wordlist">{WATCH_WORDS.join(" · ")}</span>
-        </li>
-        <li>
-          <span className="news-badge news-badge-new">새 기사</span> 최근 24시간 안에 올라온 기사
-        </li>
-        <li>
-          <b>일부 수집</b> — 최신 100건이 모두 기간 안이라 그보다 오래된 기사는 확인하지 못했거나, 조회 중 오류가 난 경우예요. 기사
-          수가 실제보다 적을 수 있어요.
-        </li>
-      </ul>
-      <p className="news-criteria-note">단어 기준은 자동 분류라 실제 위험도와 다를 수 있어요. 최종 판단은 기사 원문을 확인해주세요.</p>
-    </div>
   );
 }
 
@@ -394,22 +351,10 @@ function ClientManager({ onChanged }) {
         <p className="news-modal-sub">불러오는 중…</p>
       ) : (
         <>
-          {!editable && (
-            <div className="news-manager-note">
-              지금은 코드에 들어있는 기본 {state.clients.length}곳을 보여주고 있어요.
-              {state.reason === "supabase_not_configured"
-                ? " Supabase 환경변수가 설정되면 여기서 기업을 추가·수정할 수 있어요."
-                : state.reason === "table_missing"
-                ? " Supabase → SQL Editor에서 supabase/schema.sql 을 다시 실행하면 news_clients 테이블이 생기고 여기서 추가·수정할 수 있어요."
-                : " 아래 버튼으로 기본 목록을 DB에 넣으면 여기서 추가·수정할 수 있어요."}
-              {state.reason === "table_empty" && (
-                <div style={{ marginTop: 10 }}>
-                  <button type="button" className="news-btn news-btn-primary" disabled={busy} onClick={() => send("POST", { action: "seed" })}>
-                    기본 22곳을 DB로 가져오기
-                  </button>
-                </div>
-              )}
-            </div>
+          {!editable && state.reason === "table_empty" && (
+            <button type="button" className="news-btn news-btn-primary" disabled={busy} onClick={() => send("POST", { action: "seed" })}>
+              기본 목록 불러오기
+            </button>
           )}
           {editable && !form && (
             <button type="button" className="news-btn news-btn-primary" onClick={() => setForm({ ...EMPTY_FORM })}>
@@ -634,7 +579,6 @@ export default function NewsClippingPage() {
     items.sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1));
     return items;
   }, [clients]);
-  const incomplete = clients.filter((c) => c.status !== "ok");
   const summary = (data && data.summary) || null;
   const windowDays = (data && data.windowDays) || 14;
   const openClient = modal && modal.type === "articles" ? clients.find((c) => c.id === modal.clientId) : null;
@@ -652,30 +596,17 @@ export default function NewsClippingPage() {
             <span className={`news-refresh-icon${loading ? " spinning" : ""}`} aria-hidden="true">
               ↻
             </span>
-            {loading ? "모으는 중…" : "새로고침"}
-          </button>
-          <button type="button" className="news-btn" onClick={() => setModal({ type: "criteria" })}>
-            수집 기준
+            {loading ? "수집 중…" : "새로고침"}
           </button>
         </div>
       </div>
 
       {error && <div className="error-box">{error}</div>}
 
-      {data && (
-        <div className={`news-status${incomplete.length ? " news-status-warn" : ""}`}>
-          <span className="news-status-dot" aria-hidden="true" />
-          {incomplete.length ? `${incomplete.length}개 기업 수집 불완전` : `${clients.length}개 기업 수집 완료`}
-          <span className="news-status-sep">·</span>
-          수집 기준 {formatKst(data.collectedAt)}
-          {data.cached && <span className="news-status-cached">(5분 내 결과 재사용)</span>}
-        </div>
-      )}
-
       {loading && !data && (
         <div className="news-loading" role="status">
           <span className="ad-progress-dot" aria-hidden="true" />
-          고객사 뉴스를 모으는 중이에요… 보통 5~10초 걸려요.
+          수집 중…
         </div>
       )}
 
@@ -695,6 +626,7 @@ export default function NewsClippingPage() {
               </>
             )}
             {summary.watchArticles > 0 && <> · 관찰 항목 {summary.watchArticles}건</>}
+            <span className="news-hero-time">업데이트 {formatKst(data.collectedAt)}</span>
           </div>
         </div>
       )}
@@ -703,9 +635,9 @@ export default function NewsClippingPage() {
         <div className="news-priority">
           <div className="news-priority-head">
             <h2>우선 확인</h2>
-            <span>{priorityItems.length + incomplete.length}건</span>
+            <span>{priorityItems.length}건</span>
           </div>
-          {priorityItems.length === 0 && incomplete.length === 0 && <p className="news-priority-empty">지금 바로 확인할 기사는 없어요.</p>}
+          {priorityItems.length === 0 && <p className="news-priority-empty">지금 바로 확인할 기사는 없어요.</p>}
           {priorityItems.length > 0 && (
             <ul className="news-priority-list">
               {visiblePriority.map((a) => (
@@ -718,13 +650,6 @@ export default function NewsClippingPage() {
               {showAllPriority ? "접기" : `즉시 확인 기사 ${priorityItems.length - 6}건 더 보기`}
             </button>
           )}
-          {incomplete.map((c) => (
-            <div key={c.id} className="news-incomplete">
-              <span className="news-tag news-tag-watch">{c.status === "error" ? "수집 실패" : "수집 불완전"}</span>
-              <b>{c.name}</b>
-              <span>{(c.notes || []).join(" ") || "일부 기사만 확인했어요."}</span>
-            </div>
-          ))}
         </div>
       )}
 
@@ -734,8 +659,7 @@ export default function NewsClippingPage() {
             <div>
               <h2>기업별 뉴스 클리핑</h2>
               <p>
-                즉시 확인 기사 → 일반 기사 → 기사 없음 순이며, 같은 단계에서는 기사 수가 많은 기업부터 표시합니다. 카드 오른쪽 위 ⠿ 를 끌거나
-                눌러서 순서를 바꿀 수 있어요.
+                카드 오른쪽 위 ⠿ 를 끌거나 눌러서 순서를 바꿀 수 있어요.
               </p>
             </div>
             <div className="news-section-actions">
@@ -797,18 +721,9 @@ export default function NewsClippingPage() {
             ))}
           </div>
 
-          <p className="footer-note">
-            기사 목록은 네이버 뉴스 검색(공식 API) 결과예요. 제목을 누르면 언론사 원문이 새 창으로 열려요. 즉시 확인·관찰 항목은 단어 기준 자동
-            분류라 실제와 다를 수 있어요.
-          </p>
         </>
       )}
 
-      {modal && modal.type === "criteria" && (
-        <Modal title="수집 기준" onClose={() => setModal(null)}>
-          <Criteria windowDays={windowDays} />
-        </Modal>
-      )}
       {modal && modal.type === "clients" && (
         <Modal title={`모니터링 기업 ${clients.length}곳`} onClose={() => setModal(null)} wide>
           <ClientManager onChanged={() => load(true)} />

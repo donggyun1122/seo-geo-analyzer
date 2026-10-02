@@ -37,43 +37,29 @@ function DeviceResult({ label, r }) {
         <span className="rank-panel-num">{r.rank}</span>위
       </>
     );
-    sub = r.pageLabel ? `${r.pageLabel}에 노출` : `광고 더보기 ${r.page}페이지에 노출`;
+    sub = "";
   } else if (r.status === "not_found") {
     tone = "warn";
     main = "노출 안 됨";
-    sub = `광고 ${r.scannedAds || 0}개(${
-      r.device === "mobile" ? r.loadSummary || "모바일 전체" : `${r.pagesFetched || 0}페이지`
-    })를 모두 확인했는데 우리 광고가 없었어요.`;
+    sub = `광고 ${r.scannedAds || 0}개 중 우리 광고가 없어요.`;
   } else if (r.status === "empty") {
     main = "광고 없음";
-    sub = "이 키워드로 노출된 파워링크 광고 자체를 찾지 못했어요.";
+    sub = "이 키워드에 노출된 광고가 없어요.";
   } else if (r.status === "blocked") {
     tone = "bad";
     main = "접근 제한";
-    sub = "네이버가 자동화된 접근으로 판단해 조회를 막았어요.";
+    sub = "잠시 후 다시 시도해주세요.";
   } else {
     tone = "bad";
     main = "조회 실패";
-    sub = "조회 중 오류가 났어요.";
+    sub = "잠시 후 다시 시도해주세요.";
   }
 
   return (
     <div className={`rank-panel rank-panel-${tone}`}>
       <div className="rank-panel-head">{label}</div>
       <div className="rank-panel-main">{main}</div>
-      <p className="rank-panel-sub">{sub}</p>
-      {r.status === "found" && r.rankSource && (
-        <p className="rank-panel-note">
-          {r.rankSource === "naver" ? "네이버가 광고에 붙여둔 순위 번호 기준" : "화면에 나온 순서 기준"}
-        </p>
-      )}
-      {r.note && <p className="rank-panel-note">{r.note}</p>}
-      {(r.status === "blocked" || r.status === "error" || r.status === "empty") && r.errorMessage && (
-        <details className="rank-panel-detail">
-          <summary>자세히</summary>
-          <p>{r.errorMessage}</p>
-        </details>
-      )}
+      {sub && <p className="rank-panel-sub">{sub}</p>}
     </div>
   );
 }
@@ -129,7 +115,7 @@ export default function SearchAdRankPage() {
             setMessage("");
           } else {
             setPhase("error");
-            setMessage(r.errorMessage || "조회에 실패했어요.");
+            setMessage("조회에 실패했어요. 잠시 후 다시 시도해주세요.");
           }
           return;
         }
@@ -139,7 +125,7 @@ export default function SearchAdRankPage() {
       if (Date.now() - startedAt > MAX_WAIT_MS) {
         stopTimers();
         setPhase("timeout");
-        setMessage("10분이 지나도 결과가 안 왔어요. GitHub 저장소의 Actions 탭에서 search-ad-rank 워크플로가 실행 중인지 확인해보세요.");
+        setMessage("결과를 받지 못했어요. 잠시 후 다시 시도해주세요.");
       }
     };
     pollTimerRef.current = setInterval(tick, INTERVAL_MS);
@@ -186,7 +172,7 @@ export default function SearchAdRankPage() {
     <div className="container">
       <div className="header">
         <h1>키워드 노출분석</h1>
-        <p>우리 사이트 주소와 키워드를 입력하면, 네이버 파워링크에서 우리 광고가 PC와 모바일에서 각각 몇 위에 노출되는지 알려드려요.</p>
+        <p>우리 광고가 PC·모바일에서 몇 위에 노출되는지 확인하세요.</p>
       </div>
 
       <div className="card">
@@ -206,19 +192,13 @@ export default function SearchAdRankPage() {
           />
           <input type="text" placeholder="키워드 (예: 호텔예약)" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
           <button type="submit" disabled={busy || (!siteUrl.trim() && !advertiserName.trim()) || !keyword.trim()}>
-            {busy ? "확인 중..." : "노출 순위 확인"}
+            {busy ? "수집 중..." : "노출 순위 확인"}
           </button>
         </form>
-        <p className="search-hint">
-          광고에 표시되는 사이트 주소로 우리 광고를 찾아요(www., m. 은 달라도 같은 사이트로 봐요). 스마트스토어는 스토어 이름까지 넣어주세요(예:
-          smartstore.naver.com/스토어명). 플레이스로 연결되는 광고는 주소만으로 구분이 안 될 때가 많아서(특히 모바일), 광고에 표시되는
-          광고주명을 함께 넣어주세요 — 주소나 광고주명 중 하나라도 맞으면 우리 광고로 봐요. PC·모바일을 차례로 확인해서 보통 2~4분 걸려요.
-        </p>
         {busy && (
           <div className="ad-progress" role="status">
             <span className="ad-progress-dot" aria-hidden="true" />
-            PC → 모바일 순서로 우리 광고를 찾는 중이에요… ({elapsed}초)
-            {elapsed > 120 && <span className="ad-progress-sub">광고가 많은 키워드이거나 우리 광고가 없으면 마지막 페이지까지 확인하느라 더 걸려요.</span>}
+            수집 중… ({elapsed}초)
           </div>
         )}
         {(phase === "error" || phase === "timeout") && message && <div className="error-box">{message}</div>}
@@ -252,10 +232,6 @@ export default function SearchAdRankPage() {
             </div>
           )}
 
-          <p className="footer-note">
-            순위는 광고 더보기 페이지(PC/모바일) 기준이에요. 네이버 광고는 실시간 입찰 결과라 조회할 때마다, 그리고 보는 위치·시간에 따라
-            순위가 조금씩 달라질 수 있어요. 광고 링크(클릭하면 광고비가 청구되는 추적 링크)는 열지 않고 화면에 보이는 정보만 읽어요.
-          </p>
         </>
       )}
     </div>

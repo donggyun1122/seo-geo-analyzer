@@ -336,25 +336,35 @@ insert into news_clients (name, keywords, require_any, exclude_keywords, ignore_
   ('교원', array['교원그룹','교원투어','교원라이프','교원웰스','교원 빨간펜'], '{}', '{}', '{}', 'title_desc', 'kyowon.co.kr', 0),
   ('BIGHIT MUSIC', array['빅히트뮤직','BIGHIT MUSIC'], '{}', '{}', '{}', 'title_desc', 'ibighit.com', 1),
   ('삼성자산운용', array['삼성자산운용'], '{}', '{}', '{}', 'title_desc', 'samsungfund.com', 2),
-  ('고려은단', array['고려은단'], '{}', '{}', '{}', 'title_desc', null, 3),
+  ('고려은단', array['고려은단'], '{}', '{}', '{}', 'title_desc', 'eundan.com', 3),
   ('하이브', array['하이브','HYBE'], '{}', '{}', array['하이브리드'], 'title', 'hybecorp.com', 4),
-  ('구몬', array['구몬'], '{}', '{}', '{}', 'title_desc', null, 5),
+  ('구몬', array['구몬'], '{}', '{}', '{}', 'title_desc', 'kumon.co.kr', 5),
   ('LG전자', array['LG전자'], '{}', '{}', '{}', 'title', 'lge.co.kr', 6),
   ('DB손해보험', array['DB손해보험','DB손보'], '{}', '{}', '{}', 'title_desc', 'idbins.com', 7),
   ('아고다', array['아고다'], '{}', '{}', '{}', 'title_desc', 'agoda.com', 8),
   ('이투스', array['이투스'], '{}', '{}', '{}', 'title_desc', 'etoos.com', 9),
   ('레뷰', array['레뷰코퍼레이션','레뷰'], '{}', '{}', '{}', 'title_desc', 'revu.net', 10),
   ('부킹닷컴', array['부킹닷컴'], '{}', '{}', '{}', 'title_desc', 'booking.com', 11),
-  ('디클래시', array['디클래시'], '{}', '{}', '{}', 'title_desc', null, 12),
+  ('디클래시', array['디클래시'], '{}', '{}', '{}', 'title_desc', 'dclassy.co.kr', 12),
   ('스카이스캐너', array['스카이스캐너'], '{}', '{}', '{}', 'title_desc', 'skyscanner.co.kr', 13),
-  ('KOZ 엔터테인먼트', array['KOZ엔터테인먼트','KOZ 엔터'], '{}', '{}', '{}', 'title_desc', null, 14),
+  ('KOZ 엔터테인먼트', array['KOZ엔터테인먼트','KOZ 엔터'], '{}', '{}', '{}', 'title_desc', 'kozofficial.com', 14),
   ('쌤소나이트', array['쌤소나이트'], '{}', '{}', '{}', 'title_desc', 'samsonite.com', 15),
-  ('미소페', array['미소페'], '{}', '{}', '{}', 'title_desc', null, 16),
+  ('미소페', array['미소페'], '{}', '{}', '{}', 'title_desc', 'misope.co.kr', 16),
   ('와이어바알리', array['와이어바알리'], '{}', '{}', '{}', 'title_desc', 'wirebarley.com', 17),
-  ('브람스', array['브람스'], '{}', array['교향곡','협주곡','작곡가','소나타','피아니스트','바이올리니스트','오케스트라','브람스를 좋아하세요'], '{}', 'title_desc', null, 18),
+  ('브람스', array['브람스'], array['가구','소파','리클라이너','안마의자','침대','매트리스','인테리어','리빙','쇼룸'], array['교향곡','협주곡','작곡가','소나타','피아니스트','바이올리니스트','오케스트라','브람스를 좋아하세요'], '{}', 'title_desc', null, 18),
   ('카약', array['카약'], array['KAYAK','여행','항공','호텔','숙소','항공권','앱','플랫폼','검색'], '{}', array['카약킹'], 'title_desc', 'kayak.co.kr', 19),
   ('호텔스컴바인', array['호텔스컴바인'], '{}', '{}', '{}', 'title_desc', 'hotelscombined.co.kr', 20),
   ('스카이라이프', array['스카이라이프'], '{}', '{}', '{}', 'title_desc', 'skylife.co.kr', 21)
 on conflict (name) do nothing;
+
+-- (2026-10-02) 이미 22곳이 들어가 있는 경우를 위한 보정 — 로고용 공식 사이트와 브람스(가구) 문맥 단어
+update news_clients set domain = 'eundan.com' where name = '고려은단' and domain is null;
+update news_clients set domain = 'kumon.co.kr' where name = '구몬' and domain is null;
+update news_clients set domain = 'dclassy.co.kr' where name = '디클래시' and domain is null;
+update news_clients set domain = 'kozofficial.com' where name = 'KOZ 엔터테인먼트' and domain is null;
+update news_clients set domain = 'misope.co.kr' where name = '미소페' and domain is null;
+update news_clients
+  set require_any = array['가구','소파','리클라이너','안마의자','침대','매트리스','인테리어','리빙','쇼룸']
+  where name = '브람스' and require_any = '{}';
 
 -- alter table news_clients enable row level security; -- 다중 사용자로 확장 시

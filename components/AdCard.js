@@ -46,7 +46,7 @@ export default function AdCard({ ad, highlight = false }) {
           )}
           <span className="ad-card-advertiser-name">{ad.advertiser || "(광고주명 없음)"}</span>
           {ad.landingUrl ? (
-            <a className="ad-card-url" href={ad.landingUrl} target="_blank" rel="noopener noreferrer" title="광고 추적 링크가 아니라 실제 사이트 주소로 열려요">
+            <a className="ad-card-url" href={ad.landingUrl} target="_blank" rel="noopener noreferrer">
               {ad.displayUrl || hostOf(ad.landingUrl)}
             </a>
           ) : (
