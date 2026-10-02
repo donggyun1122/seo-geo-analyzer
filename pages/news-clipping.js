@@ -588,7 +588,7 @@ export default function NewsClippingPage() {
     <div className="container news-container">
       <div className="news-top">
         <div>
-          <p className="news-eyebrow">CLIENT NEWS CLIPPING</p>
+          <p className="news-eyebrow">INTELLIGENCE / NEWS CLIPPING</p>
           <h1 className="news-h1">고객사 뉴스 클리핑</h1>
         </div>
         <div className="news-top-actions">

@@ -1,6 +1,28 @@
-# SEO 사이트 분석기
+# DG MKT LAB — Marketing Intelligence Platform
 
-URL을 입력하면 콘텐츠 SEO / 테크니컬 SEO / 검색엔진 친화도 / 속도 최적화 / 보안 권장사항을 점검해주고, 브랜드 키워드로 네이버 블로그·뉴스·카페 발행 현황과 검색량·연관 키워드·검색 트렌드를 조회할 수 있는 웹사이트입니다.
+마케팅 실무에 필요한 검색 · 광고 · 플레이스 · 시장 데이터를 한 곳에서 분석하는 사이트입니다. (이전 이름 "SEO 사이트 분석기"에서 개편 — SEO는 여러 분석 기능 중 하나예요.)
+
+## 사이트 구조 (2026-10-02 개편)
+
+기존 페이지 주소와 분석 기능(API·데이터 처리)은 그대로이고, 메뉴 구조와 홈 화면·디자인만 바뀌었어요.
+
+| 상단 메뉴 | 메뉴 이름 | 연결되는 기존 화면 | 주소 |
+|---|---|---|---|
+| SEARCH | SEO Analysis | SEO 점수 체크 | `/seo` |
+| SEARCH | GEO · AEO | GEO·AEO 분석 | `/geo` |
+| SEARCH | Keyword Analysis | 키워드 분석 | `/keyword` |
+| ADVERTISING | Search Ads Analysis | 키워드 노출분석 | `/search-ad-rank` |
+| ADVERTISING | Ad Creative Analysis | 노출 광고 현황 | `/search-ad` |
+| LOCAL | Place Analysis | 키워드 순위표 | `/keyword-place-list` |
+| LOCAL | Place Ranking | 플레이스 순위 | `/place` |
+| INTELLIGENCE | News Clipping | 고객사 뉴스 클리핑 | `/news-clipping` |
+| REPORT | Marketing Dashboard | Dashboard(전체 기능 모음) | `/dashboard` |
+
+- 메뉴에 **Soon** 이 붙은 항목(Search Result Analysis, Keyword Monitoring, Ad Performance, Landing Page Analysis, Review Analysis, Marketing Trend, Industry Issues, Competitor Monitoring, Analysis Report, Export)은 아직 기능이 없는 자리 표시예요. 눌러지지 않아요.
+- **메뉴를 고치는 곳은 한 군데**: `lib/siteNav.js`. 여기만 고치면 상단 메뉴·모바일 메뉴·푸터·Dashboard·페이지 상단 위치 표시에 모두 반영돼요. 새 기능 페이지를 만들면 해당 항목의 `soon: true`를 지우고 `href`를 넣으면 돼요.
+- **홈 화면의 숫자는 예시(Demo) 데이터**예요(`lib/demoData.js`). 대시보드 미리보기·기능 카드에는 "Sample", Today's Marketing Intelligence에는 "DEMO DATA" 표시가 붙어 있어요. 실제 데이터로 바꿀 때는 같은 모양의 값을 컴포넌트(`components/home/*`, `components/charts/TrendChart.js`)에 넘기면 돼요.
+- 디자인 기준 색·글꼴은 `styles/globals.css` 맨 위 `:root`에 모여 있어요. 글꼴은 Pretendard(`pages/_document.js`에서 불러옴).
+- 쇼핑 검색 기능은 삭제하지 않았고, 메뉴·홈 어디에도 노출하지 않아요(`lib/featureFlags.js`).
 
 ## 배포 방법 (요약)
 
