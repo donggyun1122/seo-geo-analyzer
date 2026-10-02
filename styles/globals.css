@@ -5218,7 +5218,7 @@ a.quick-card:hover .quick-card-go {
   font-family: "Paperlogy", "Arial Black", var(--font-sans);
   font-size: calc(min(21.5vw, 38vh) * var(--fit, 1));
   font-weight: 900;
-  line-height: 0.88; /* DG MKT 과 LAB 사이 간격 */
+  line-height: 0.8; /* DG MKT 과 LAB 사이 간격 */
   letter-spacing: -0.01em;
   text-align: center;
   text-transform: uppercase;
@@ -5232,6 +5232,11 @@ a.quick-card:hover .quick-card-go {
 .shero-line {
   display: block;
   white-space: nowrap;
+}
+
+/* 글자 조각 등장은 모바일 전용 — PC에서는 숨겨요 */
+.shero-pieces {
+  display: none;
 }
 
 .shero-dim {
@@ -5305,9 +5310,21 @@ a.quick-card:hover .quick-card-go {
   transform-origin: top;
 }
 
-@keyframes shero-grid {
+@keyframes shero-piece {
+  from {
+    opacity: 1;
+  }
   to {
-    transform: translate3d(44px, 44px, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes shero-cue-in {
+  from {
+    visibility: hidden;
+  }
+  to {
+    visibility: visible;
   }
 }
 
@@ -5327,8 +5344,8 @@ a.quick-card:hover .quick-card-go {
 /* 모바일: 영상 없이 같은 흐름(짙은 남색 화면으로 바뀌며 카피) */
 @media (max-width: 900px) {
   .shero {
-    height: 250vh;
-    height: 250svh;
+    height: 210vh;
+    height: 210svh;
   }
   .shero-stage {
     top: 60px;
@@ -5340,34 +5357,26 @@ a.quick-card:hover .quick-card-go {
   }
   .shero-word {
     position: relative;
-    z-index: 1;
-    line-height: 0.98;
+    line-height: 0.92;
   }
 
-  /* 모바일 배경 모션 — 은은한 격자가 대각선으로 천천히 흘러요.
-     흰 화면(처음)에는 옅은 회색 선, 남색 화면(카피)에는 옅은 흰 선으로 이어져요.
-     격자 한 칸(44px)만큼만 움직였다가 처음으로 돌아가서 끊김 없이 반복돼요. */
-  .shero-mask::before,
-  .shero-media::before {
-    content: "";
+  /* 모바일 첫 등장 모션 — 흰 조각들이 글자를 덮고 있다가 제각각 사라지며 글자가 조각조각 완성돼요 */
+  .shero-pieces {
     position: absolute;
-    inset: -44px;
-    background-size: 44px 44px;
-    animation: shero-grid 9s linear infinite;
-    will-change: transform;
+    inset: -3% -2%;
+    display: grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    grid-template-rows: repeat(var(--rows), 1fr);
     pointer-events: none;
   }
-  .shero-mask::before {
-    background-image: linear-gradient(to right, rgba(15, 23, 42, 0.085) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(15, 23, 42, 0.085) 1px, transparent 1px);
-    -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 50%, #000 35%, transparent 100%);
-    mask-image: radial-gradient(ellipse 85% 70% at 50% 50%, #000 35%, transparent 100%);
+  .shero-pieces i {
+    background: #fff;
+    outline: 1px solid #fff; /* 조각 사이로 글자가 비치지 않게 */
+    animation: shero-piece 0.01s steps(1) both;
   }
-  .shero-media::before {
-    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
-    -webkit-mask-image: radial-gradient(ellipse 90% 75% at 50% 50%, #000 30%, transparent 100%);
-    mask-image: radial-gradient(ellipse 90% 75% at 50% 50%, #000 30%, transparent 100%);
+  /* "Scroll" 안내는 글자가 완성된 뒤에 나와요 */
+  .shero-cue {
+    animation: shero-cue-in 0.5s ease 1.5s both;
   }
   .shero-word {
     font-size: calc(min(22vw, 30vh) * var(--fit, 1));
@@ -5407,9 +5416,6 @@ a.quick-card:hover .quick-card-go {
   .shero-mask,
   .shero-cue {
     display: none;
-  }
-  .shero-media::before {
-    animation: none;
   }
   .shero-dim {
     opacity: 1;
