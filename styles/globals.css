@@ -31,11 +31,20 @@
   box-sizing: border-box;
 }
 
+/* 가로 넘침은 html에서만 막아요. body까지 overflow를 주면 body가 별도 스크롤 영역이 돼서
+   상단 메뉴 고정(sticky)과 홈 첫 화면의 스크롤 고정 연출이 동작하지 않아요. */
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: clip;
+}
+
 html,
 body {
   margin: 0;
   max-width: 100%;
-  overflow-x: hidden;
   background: var(--bg-page);
   color: var(--text-primary);
   font-family: var(--font-sans);
@@ -5126,5 +5135,229 @@ a.quick-card:hover .quick-card-go {
   .reveal-armed {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* ==========================================================================
+   홈 첫 화면 — 스크롤 연출 Hero (components/home/ScrollHero.js)
+   큰 글자 안의 영상 → 글자 확대 → 영상 전체 화면 → 카피
+   --scale / --mask / --dim / --copy / --cue 값은 스크롤에 맞춰 자바스크립트가 넣어줘요.
+   ========================================================================== */
+.shero {
+  position: relative;
+  height: 340vh; /* 이 길이만큼 스크롤하는 동안 화면이 고정돼요 */
+}
+
+.shero-stage {
+  position: sticky;
+  top: 68px; /* 상단 메뉴 높이 */
+  height: calc(100vh - 68px);
+  overflow: hidden;
+  background: #fff;
+}
+
+.shero-media,
+.shero-mask,
+.shero-dim,
+.shero-copy {
+  position: absolute;
+  inset: 0;
+}
+
+.shero-media {
+  background: var(--navy-dark);
+}
+
+.shero-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 밝은 영상에서도 글자가 또렷하게 보이도록 살짝 눌러줘요 */
+.shero-tint {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.3);
+}
+
+.shero-mask {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  mix-blend-mode: screen;
+  opacity: var(--mask, 1);
+}
+
+.shero-word {
+  flex: none;
+  font-family: "Anton", Impact, "Haettenschweiler", "Arial Narrow Bold", "Arial Black", sans-serif;
+  font-size: calc(min(23vw, 38vh) * var(--fit, 1));
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: 0.005em;
+  text-align: center;
+  text-transform: uppercase;
+  color: #000;
+  transform: scale(var(--scale, 1));
+  transform-origin: 50% 70%;
+  will-change: transform;
+  user-select: none;
+}
+
+.shero-line {
+  display: block;
+  white-space: nowrap;
+}
+
+.shero-dim {
+  background: rgba(8, 12, 24, 0.58);
+  opacity: var(--dim, 0);
+}
+
+.shero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  text-align: center;
+  color: #fff;
+  opacity: var(--copy, 0);
+  transform: translateY(calc((1 - var(--copy, 0)) * 28px));
+  pointer-events: none;
+}
+
+.shero-stage.is-copy .shero-copy {
+  pointer-events: auto;
+}
+
+.shero-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.shero-copy h1 {
+  margin: 22px 0 0;
+  font-size: clamp(30px, 4.6vw, 64px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+}
+
+.shero-copy p {
+  margin: 26px 0 0;
+  max-width: 560px;
+  font-size: clamp(15.5px, 1.25vw, 18px);
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.shero-cue {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--text-muted);
+  opacity: var(--cue, 1);
+  pointer-events: none;
+}
+
+.shero-cue i {
+  width: 1px;
+  height: 34px;
+  background: linear-gradient(var(--text-muted), rgba(139, 149, 165, 0));
+  animation: shero-cue 1.8s ease-in-out infinite;
+  transform-origin: top;
+}
+
+@keyframes shero-cue {
+  0% {
+    transform: scaleY(0);
+  }
+  55% {
+    transform: scaleY(1);
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 0;
+  }
+}
+
+/* 모바일: 영상 없이 같은 흐름(짙은 남색 화면으로 바뀌며 카피) */
+@media (max-width: 900px) {
+  .shero {
+    height: 250vh;
+    height: 250svh;
+  }
+  .shero-stage {
+    top: 60px;
+    height: calc(100vh - 60px);
+    height: calc(100svh - 60px);
+  }
+  .shero-tint {
+    display: none;
+  }
+  .shero-word {
+    font-size: calc(min(30vw, 30vh) * var(--fit, 1));
+  }
+  .shero-dim {
+    background: rgba(8, 12, 24, 0.25);
+  }
+  .shero-copy {
+    padding: 0 22px;
+  }
+  .shero-label {
+    font-size: 11.5px;
+    letter-spacing: 0.14em;
+  }
+  .shero-copy h1 {
+    margin-top: 16px;
+    font-size: clamp(27px, 7.6vw, 40px);
+  }
+  .shero-copy p {
+    margin-top: 18px;
+    font-size: 15.5px;
+  }
+}
+
+/* "동작 줄이기" 설정이면 연출 없이 영상(또는 남색 배경) 위에 카피만 보여줘요 */
+@media (prefers-reduced-motion: reduce) {
+  .shero {
+    height: auto;
+  }
+  .shero-stage {
+    position: relative;
+    top: 0;
+    height: auto;
+    min-height: 78vh;
+    display: flex;
+  }
+  .shero-mask,
+  .shero-cue {
+    display: none;
+  }
+  .shero-dim {
+    opacity: 1;
+  }
+  .shero-copy {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    padding: 96px 24px;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
   }
 }

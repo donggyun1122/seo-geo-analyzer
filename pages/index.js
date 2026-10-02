@@ -2,14 +2,14 @@ import Link from "next/link";
 import Icon from "../components/Icon";
 import Reveal from "../components/ui/Reveal";
 import TrendChart from "../components/charts/TrendChart";
-import HeroDashboard from "../components/home/HeroDashboard";
+import ScrollHero from "../components/home/ScrollHero";
 import FeaturePreview from "../components/home/FeaturePreview";
 import Delta from "../components/home/Delta";
-import { SITE, QUICK_TOOLS } from "../lib/siteNav";
-import { HERO_OVERVIEW, FEATURE_PREVIEWS, TODAY_INTELLIGENCE } from "../lib/demoData";
+import { QUICK_TOOLS } from "../lib/siteNav";
+import { FEATURE_PREVIEWS, TODAY_INTELLIGENCE } from "../lib/demoData";
 
 // DG MKT LAB 홈 화면.
-// 순서: Hero → Quick Analysis → Core Features → From Data to Insight → Today's Marketing Intelligence
+// 순서: Hero(스크롤 연출) → Quick Analysis → Core Features → From Data to Insight → Today's Marketing Intelligence
 //       → Workflow → Built by a Marketer → CTA (푸터는 _app.js에서 공통으로 붙어요)
 // 대시보드·카드 안의 숫자는 화면 구성을 보여주는 예시 데이터(lib/demoData.js)예요.
 
@@ -138,43 +138,8 @@ export default function Home() {
   const today = TODAY_INTELLIGENCE;
   return (
     <div className="home">
-      {/* ── HERO ─────────────────────────────────────────── */}
-      <section className="hero">
-        <div className="wrap hero-grid">
-          <div className="hero-copy">
-            <Reveal>
-              <span className="eyebrow eyebrow-pill">{SITE.tagline.toUpperCase()}</span>
-            </Reveal>
-            <Reveal delay={60}>
-              <h1>
-                데이터를 보면,
-                <br />
-                <em>다음 마케팅</em>이 보입니다.
-              </h1>
-            </Reveal>
-            <Reveal delay={120}>
-              <p className="hero-sub">
-                SEO · 검색 · 광고 · 플레이스 · 경쟁사 데이터를 한 곳에서 분석하고 마케팅 의사결정에 필요한 인사이트를 발견하세요.
-              </p>
-            </Reveal>
-            <Reveal delay={180} className="hero-actions">
-              <Link href="/dashboard" className="btn btn-primary btn-lg">
-                분석 시작하기
-                <Icon name="arrowRight" size={18} />
-              </Link>
-              <a href="#tools" className="btn btn-ghost btn-lg">
-                기능 살펴보기
-              </a>
-            </Reveal>
-            <Reveal delay={240}>
-              <p className="hero-en">{SITE.messageEn}</p>
-            </Reveal>
-          </div>
-          <Reveal delay={160} className="hero-visual">
-            <HeroDashboard data={HERO_OVERVIEW} />
-          </Reveal>
-        </div>
-      </section>
+      {/* ── HERO (스크롤 연출: 큰 글자 → 영상 전체 화면 → 카피) ── */}
+      <ScrollHero />
 
       {/* ── QUICK ANALYSIS ───────────────────────────────── */}
       <section className="section section-white" id="tools">

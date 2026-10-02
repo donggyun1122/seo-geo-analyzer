@@ -18,11 +18,22 @@
 | INTELLIGENCE | News Clipping | 고객사 뉴스 클리핑 | `/news-clipping` |
 | REPORT | Marketing Dashboard | Dashboard(전체 기능 모음) | `/dashboard` |
 
-- 메뉴에 **Soon** 이 붙은 항목(Search Result Analysis, Keyword Monitoring, Ad Performance, Landing Page Analysis, Review Analysis, Marketing Trend, Industry Issues, Competitor Monitoring, Analysis Report, Export)은 아직 기능이 없는 자리 표시예요. 눌러지지 않아요.
-- **메뉴를 고치는 곳은 한 군데**: `lib/siteNav.js`. 여기만 고치면 상단 메뉴·모바일 메뉴·푸터·Dashboard·페이지 상단 위치 표시에 모두 반영돼요. 새 기능 페이지를 만들면 해당 항목의 `soon: true`를 지우고 `href`를 넣으면 돼요.
-- **홈 화면의 숫자는 예시(Demo) 데이터**예요(`lib/demoData.js`). 대시보드 미리보기·기능 카드에는 "Sample", Today's Marketing Intelligence에는 "DEMO DATA" 표시가 붙어 있어요. 실제 데이터로 바꿀 때는 같은 모양의 값을 컴포넌트(`components/home/*`, `components/charts/TrendChart.js`)에 넘기면 돼요.
-- 디자인 기준 색·글꼴은 `styles/globals.css` 맨 위 `:root`에 모여 있어요. 글꼴은 Pretendard(`pages/_document.js`에서 불러옴).
+- 메뉴에 **Soon** 이 붙은 항목은 아직 기능이 없는 자리 표시예요. 눌러지지 않아요.
+- **메뉴를 고치는 곳은 한 군데**: `lib/siteNav.js`. 여기만 고치면 상단 메뉴·모바일 메뉴·푸터·Dashboard·페이지 상단 위치 표시에 모두 반영돼요.
+- **홈 화면의 숫자는 예시(Demo) 데이터**예요(`lib/demoData.js`). "Sample" / "DEMO DATA" 표시가 붙어 있어요.
+- 디자인 기준 색·글꼴은 `styles/globals.css` 맨 위 `:root`에 모여 있어요. 글꼴은 Pretendard, 홈 첫 화면의 큰 영문 글자는 Anton(둘 다 `pages/_document.js`에서 불러옴).
 - 쇼핑 검색 기능은 삭제하지 않았고, 메뉴·홈 어디에도 노출하지 않아요(`lib/featureFlags.js`).
+
+### 홈 첫 화면(Hero) — 스크롤 연출 (2026-10-02)
+
+- **PC**: 흰 배경의 큰 글자(DG MKT / LAB) 안으로 영상이 보이고 → 스크롤하면 화면이 고정된 채 글자가 커지고 → 영상이 화면 전체를 채운 뒤 → 카피가 떠올라요. 더 내리면 다음 섹션으로 넘어가요.
+- **모바일(900px 이하)**: 영상 없이 같은 흐름이에요(큰 글자 → 짙은 남색 화면 → 카피). 영상 파일은 모바일에서 내려받지 않아요.
+- 파일: `components/home/ScrollHero.js`(동작), `styles/globals.css` 맨 아래 `.shero-*`(모양), **영상은 `public/videos/hero.mp4`, 영상이 뜨기 전 정지 화면은 `public/videos/hero-poster.jpg`**.
+- **영상 바꾸기**: 같은 이름(`hero.mp4`, `hero-poster.jpg`)으로 `public/videos` 폴더에 덮어쓰면 돼요. 소리 없는 가로 영상, 10~15초, 5MB 안팎을 권장해요(GitHub 웹 업로드는 파일당 25MB까지).
+- **문구 바꾸기**: `pages/index.js`의 `<ScrollHero />`에 `lines`(큰 글자), `label`, `title`, `description` 값을 넣으면 돼요. 안 넣으면 `ScrollHero.js` 맨 위의 기본 문구가 나와요.
+- 스크롤 길이는 `.shero`의 `height: 340vh`(모바일 250vh)로 조절해요. 숫자가 클수록 천천히 진행돼요.
+- 기기의 "동작 줄이기" 설정이 켜져 있으면 연출 없이 영상 위 카피만 보여줘요.
+- 함께 고친 것: `body`에 걸려 있던 가로 넘침 설정 때문에 상단 메뉴 고정이 동작하지 않던 문제(스크롤해도 메뉴가 위에 붙어 있어야 하는데 같이 올라가던 것)를 고쳤어요.
 
 ## 배포 방법 (요약)
 
