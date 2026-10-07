@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { track } from "../../lib/analytics";
 
 // 홈 첫 화면 — 스크롤 연출 Hero.
 //
@@ -69,6 +70,7 @@ export default function ScrollHero({
     let raf = 0;
     let lastP = -1;
     let lastW = window.innerWidth;
+    let copySeen = false;
     const isDesktop = window.matchMedia("(min-width: 901px)").matches;
 
     // 글자가 화면 폭을 넘으면(글꼴이 늦게 뜨거나 대체 글꼴일 때) 폭에 맞게 줄여요.
@@ -103,6 +105,11 @@ export default function ScrollHero({
       stage.style.setProperty("--copy", range(p, 0.6, 0.8).toFixed(4)); // 카피가 나타나는 정도
       stage.style.setProperty("--cue", (1 - range(p, 0, 0.08)).toFixed(4)); // "Scroll" 안내
       stage.classList.toggle("is-copy", p > 0.6);
+      // 카피까지 스크롤해서 본 경우 한 번만 기록해요.
+      if (p > 0.8 && !copySeen) {
+        copySeen = true;
+        track("hero_copy_view", { method: isDesktop ? "pc" : "mobile" });
+      }
 
       // 화면에서 완전히 벗어나면 영상을 잠깐 멈춰요(배터리·성능 절약).
       const v = videoRef.current;

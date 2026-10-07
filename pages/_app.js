@@ -4,6 +4,11 @@ import "../styles/globals.css";
 import NavBar from "../components/NavBar";
 import Footer from "../components/Footer";
 import { SITE, findNavByPath } from "../lib/siteNav";
+import { initAnalytics } from "../lib/analytics";
+
+// 사이트 이벤트 추적(GTM dataLayer) 시작 — 브라우저에서 한 번만 실행돼요. 자세한 내용은 lib/analytics.js
+// (각 페이지가 처음 데이터를 불러오기 전에 준비돼야 해서, 화면이 그려지기 전에 여기서 바로 시작해요.)
+if (typeof window !== "undefined") initAnalytics();
 
 // 모든 페이지 공통 틀: 상단 메뉴 → (분석 페이지면) 현재 위치 표시 → 페이지 내용 → 푸터
 export default function App({ Component, pageProps }) {

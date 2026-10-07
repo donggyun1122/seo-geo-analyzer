@@ -254,3 +254,42 @@ http://localhost:3000 에서 확인할 수 있습니다.
 - **이름이 흔한 기업 주의**: 카약(레저 카약), 브람스(작곡가), 교원(선생님), 하이브(하이브리드)처럼 다른 뜻이 있는 이름은 문맥 단어·제외 단어·검색어로 걸러놨어요. **브람스**는 가구 브랜드라 가구·소파·리클라이너 같은 단어가 함께 나온 기사만 보여줘요.
 - API 호출량: 새로고침 1번에 약 30회(검색어 수만큼). 네이버 검색 API 하루 한도(25,000회) 안에서 충분해요.
 - (2026-10-02) 화면의 설명 문구를 간략하게 정리했어요 — 수집 방식·소요 시간·수집 불완전 안내는 화면에 표시하지 않아요(자세한 오류 내용은 GitHub Actions 실행 로그와 Supabase 결과 행에 그대로 남아요).
+
+## GTM 이벤트 (2026-10-07)
+
+GTM 컨테이너 `GTM-W5F5C3VZ`가 `pages/_document.js`에 들어 있고, 사이트에서 일어나는 행동은 `lib/analytics.js`가 모두 같은 모양으로 dataLayer에 보내요.
+
+```
+{ event: "dg_event", event_name: "<이벤트 이름>", tool: "...", tool_category: "...", ...값들 }
+```
+
+- 그래서 GTM에는 **맞춤 이벤트 `dg_event` 트리거 1개 + GA4 이벤트 태그 1개**만 있으면 전부 받을 수 있어요(이벤트 이름은 `{{DLV - event_name}}`).
+- `docs/GTM-import-dgmktlab.json`을 GTM → 관리 → 컨테이너 가져오기(병합)로 넣으면 변수 20개·트리거 1개·태그 2개가 한 번에 만들어져요. 가져온 뒤 변수 **"GA4 측정 ID"** 값을 실제 측정 ID(`G-…`)로 바꿔야 해요. Google 태그(기본 페이지뷰)는 들어 있지 않아요 — 이미 만든 것을 그대로 쓰세요.
+- 페이지뷰·외부 링크 클릭·스크롤은 GA4 "향상된 측정"이 잡아요(이 파일에서는 보내지 않음 — 중복 방지).
+- 분석 화면 코드는 건드리지 않고, 서버 요청(`/api/...`)과 화면 클릭을 지켜보는 방식이에요. 화면의 클래스 이름(`.news-card`, `.ad-card-url` 등)을 바꾸면 `lib/analytics.js`의 해당 부분도 같이 고쳐야 해요.
+
+| 이벤트 | 언제 | 주요 값 |
+|---|---|---|
+| `analysis_start` | 분석을 실행했을 때(모든 분석 기능) | tool, search_term / target_domain, device, method |
+| `analysis_complete` | 분석 결과가 왔을 때 | tool, result_status, duration_sec, result_count, score, rank, rank_pc, rank_mobile |
+| `nav_click` | 사이트 안 링크로 이동 | link_area, link_text, link_path |
+| `menu_open` | 상단 메뉴·모바일 메뉴를 열었을 때 | link_text, link_area |
+| `button_click` | 그 밖의 버튼 클릭 | link_text, link_area |
+| `hero_copy_view` | 홈 첫 화면에서 카피까지 스크롤 | method(pc/mobile) |
+| `option_select` | 기기(PC/MO)·개수 등 선택 | link_text, filter_value |
+| `filter_change` | 필터 변경(이미지 소재만, 즉시 확인 등) | filter_value, link_area |
+| `sort_change` | 뉴스 클리핑 정렬 변경 | filter_value |
+| `csv_download` | CSV 다운로드 | link_text |
+| `ad_landing_click` | 광고 카드의 사이트 주소 클릭 | item_name(광고주) |
+| `related_keyword_click` | 연관 키워드 클릭 | search_term |
+| `news_article_click` | 뉴스 기사 클릭 | item_name(고객사), link_area, filter_value(critical/watch/normal) |
+| `news_view_all` | "전체 기사 보기" | item_name |
+| `card_reorder` | 뉴스 카드 순서 변경 | method(drag/menu), item_name |
+| `news_client_change` | 모니터링 기업 추가·수정·삭제 | method, item_name |
+| `place_register` / `place_delete` | 매장 등록·삭제 | – |
+| `place_keyword_register` / `place_keyword_delete` | 플레이스 키워드 등록·삭제 | search_term, device |
+| `place_history_view` | 순위 추이 보기 | filter_value(7d/30d) |
+
+`tool` 값: `home`, `seo_analysis`, `geo_aeo`, `keyword_analysis`, `brand_content`(SEO·키워드 분석 뒤 자동 실행되는 발행 현황), `search_ads`, `creative_analysis`, `place_analysis`, `place_ranking`, `news_clipping`, `dashboard`.
+`result_status` 값: `ok`, `empty`, `not_found`, `blocked`, `error`, `timeout`.
+개인정보: 입력한 사이트 주소는 도메인만 보내요.
